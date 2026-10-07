@@ -1,0 +1,6 @@
+{
+  "name": "Rainco Procurement Suite",
+  "description": "Rainco supplier registration, evaluation, and procurement portal wireframes.",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,44 +1,585 @@
-import { useState } from 'react';
-import { z } from 'zod';
-import { ArrowRight, Check, CheckCircle2, Eye, EyeOff, FileText, LockKeyhole, MapPin, Paperclip, Plus, Save, ShieldCheck, Trash2, Users, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { AccessNotice, businessTypes, useWorkspace, type BusinessType } from './workspace';
-const contactFields = ['First name','Last name','NIC','Mobile','Email','Title','Position','Address'];
-const addressFields = ['Address','House no','Building','Street','City','Country','State','Zipcode'];
-const initialHeader = { Name:'Northwind Traders Ltd', Email:'ops@northwind.example', 'Phone No':'+94 77 204 8813', 'Type of Business':'Corporate', Currency:'LKR', 'Business Registration No':'PV-00827412', Username:'northwind_ops', Password:'', Remark:'Referred by Rainco procurement team for industrial supply.' };
+import { useState } from "react";
+import { Link, useRouter } from "@tanstack/react-router";
+import { z } from "zod";
+import {
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  FileText,
+  LockKeyhole,
+  Mail,
+  MapPin,
+  Paperclip,
+  Plus,
+  Save,
+  ShieldCheck,
+  Trash2,
+  Users,
+  X,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AccessNotice, businessTypes, useWorkspace, type BusinessType } from "./workspace";
+const contactFields = [
+  "First name",
+  "Last name",
+  "NIC",
+  "Mobile",
+  "Email",
+  "Title",
+  "Position",
+  "Address",
+];
+const addressFields = [
+  "Address",
+  "House no",
+  "Building",
+  "Street",
+  "City",
+  "Country",
+  "State",
+  "Zipcode",
+];
+const initialHeader = {
+  Name: "Northwind Traders Ltd",
+  Email: "ops@northwind.example",
+  "Phone No": "+94 77 204 8813",
+  "Type of Business": "Corporate",
+  Currency: "LKR",
+  "Business Registration No": "PV-00827412",
+  Username: "northwind_ops",
+  Password: "",
+  Remark: "Referred by Rainco procurement team for industrial supply.",
+};
 const text = z.string().trim().min(1).max(200);
-const registrationSchema = z.object({ Name:text, Email:z.string().email().max(255), 'Phone No':z.string().regex(/^[+\d\s()-]{7,25}$/), 'Type of Business':z.enum(['Individual','Corporate','Government']), Currency:z.enum(['LKR','USD','EUR','GBP']), 'Business Registration No':text, Username:z.string().regex(/^[a-zA-Z0-9_.-]{3,50}$/), Password:z.string().min(8).max(128), Remark:z.string().max(1000) });
-export function Field({ label, children, required=false }: { label:string; children:React.ReactNode; required?:boolean }) { return <label className="field"><span className="field-label">{label}{required && <span className="required-star">*</span>}</span>{children}</label>; }
-export function Registration() {
- const {role, documents}=useWorkspace();
- const [header,setHeader]=useState(initialHeader);
- const [tab,setTab]=useState('Contact Persons');
- const [contacts,setContacts]=useState<Record<string,string>[]>([{ 'First name':'Rukshan','Last name':'Perera',NIC:'871234567V',Mobile:'+94 77 204 8813',Email:'r.perera@northwind.example',Title:'Mr',Position:'Procurement Lead',Address:'No. 12, Temple Road, Colombo' },{ 'First name':'Dilani','Last name':'Fernando',NIC:'903311204X',Mobile:'+94 71 998 2210',Email:'d.fernando@northwind.example',Title:'Ms',Position:'Accounts Officer',Address:'Lot 7, Kandy Road, Peradeniya' }]);
- const [address,setAddress]=useState<Record<string,string>>({Address:'Head Office','House no':'12',Building:'Northwind House',Street:'Temple Road',City:'Colombo',Country:'Sri Lanka',State:'Western Province',Zipcode:'00300'});
- const [uploads,setUploads]=useState<Record<string,string>>({});
- const [showPassword,setShowPassword]=useState(false);
- const [message,setMessage]=useState('');
- const [submitted,setSubmitted]=useState(false);
- const [editing,setEditing]=useState<number|null>(null);
- const [contactDraft,setContactDraft]=useState<Record<string,string>>({});
- const type=header['Type of Business'] as BusinessType;
- const requiredDocs=documents[type];
- const uploaded=requiredDocs.filter(doc=>uploads[doc.code]).length;
- function saveContact() { const valid=z.object({'First name':text,'Last name':text,NIC:text,Mobile:z.string().regex(/^[+\d\s()-]{7,25}$/),Email:z.string().email(),Title:text,Position:text,Address:text}).safeParse(contactDraft); if(!valid.success){setMessage('Please complete all contact fields and enter a valid email and mobile number.');return;} setContacts(editing === -1 ? [...contacts,contactDraft] : contacts.map((c,i)=>i===editing?contactDraft:c));setEditing(null);setMessage(''); }
- function submit() { const valid=registrationSchema.safeParse(header); if(!valid.success){ setMessage(valid.error.issues.map(i=>`${i.path.join('')}: ${i.message}`).join(' · '));return;} if(!contacts.length || addressFields.some(f=>!address[f]?.trim())){setMessage('Complete contact persons and all address details before submitting.');return;} if(uploaded !== requiredDocs.length){setTab('Attachments');setMessage('Upload every required document for your selected business type.');return;} setSubmitted(true);setMessage('Registration submitted for review in this preview. No data has been sent to Rainco or SAP.'); }
- if(role!=='supplier')return <AccessNotice audience="supplier"/>;
- return <><div className="registration-banner"><div><div className="banner-eyebrow"><UserIcon/> SUPPLIER PORTAL <span> / </span> NEW SUPPLIER</div><h1>Supplier Registration</h1><p>Northwind Traders Ltd · {type} business</p></div><div className="banner-status"><small>REGISTRATION STATUS</small><strong>{submitted?'Submitted for review':'Draft registration'}</strong><div className="mt-2 flex items-center gap-2 text-[10px] opacity-80"><span className="status-dot"/>{uploaded} of {requiredDocs.length} documents attached</div></div></div>
- <div className="invitation-note"><CheckCircle2 size={13}/> Invitation preview · Northwind Traders Ltd <span className="ml-auto">Required fields <span className="text-primary">*</span></span></div>
- <section className="form-section"><div className="section-heading"><h2>Registration Header</h2><span>Company & account information</span></div><div className="field-grid">{Object.entries(header).map(([key,value])=><div key={key} className={key==='Remark'?'field-wide':''}><Field label={key} required={key!=='Remark'}>{key==='Type of Business'?<select value={value} onChange={e=>{setHeader({...header,[key]:e.target.value});setSubmitted(false);}}>{businessTypes.map(t=><option key={t}>{t}</option>)}</select>:key==='Currency'?<select value={value} onChange={e=>setHeader({...header,[key]:e.target.value})}>{['LKR','USD','EUR','GBP'].map(c=><option key={c}>{c}</option>)}</select>:key==='Remark'?<textarea maxLength={1000} value={value} onChange={e=>setHeader({...header,[key]:e.target.value})}/>:key==='Password'?<div className="password-wrap"><input type={showPassword?'text':'password'} autoComplete="new-password" placeholder="Create a password" maxLength={128} value={value} onChange={e=>setHeader({...header,[key]:e.target.value})}/><Button variant="ghost" size="icon" aria-label={showPassword?'Hide password':'Show password'} onClick={()=>setShowPassword(!showPassword)}>{showPassword?<EyeOff/>:<Eye/>}</Button></div>:<input type={key==='Email'?'email':'text'} maxLength={200} value={value} onChange={e=>setHeader({...header,[key]:e.target.value})}/>}</Field></div>)}</div></section>
- <section className="child-section"><div className="child-tabs" role="tablist" aria-label="Registration details">{[{name:'Contact Persons',icon:Users,count:contacts.length},{name:'Address Details',icon:MapPin,count:1},{name:'Attachments',icon:Paperclip,count:requiredDocs.length}].map(t=><Button key={t.name} variant="tab" role="tab" aria-selected={tab===t.name} data-active={tab===t.name} onClick={()=>setTab(t.name)}><t.icon/>{t.name}<span className="tab-count">{t.count}</span></Button>)}</div><div className="child-body" role="tabpanel">
- {tab==='Contact Persons' && <><div className="table-toolbar"><div><strong>Contact persons</strong><small>{contacts.length} contacts associated with this supplier</small></div><Button size="sm" onClick={()=>{setEditing(-1);setContactDraft(Object.fromEntries(contactFields.map(f=>[f,''])));}}><Plus/>Add contact person</Button></div><div className="table-scroll"><table className="data-table contact-table"><thead><tr><th>#</th>{contactFields.map(f=><th key={f}>{f}</th>)}<th/></tr></thead><tbody>{contacts.map((contact,i)=><tr key={i}><td className="row-number">{String(i+1).padStart(2,'0')}</td>{contactFields.map(f=><td key={f}>{contact[f]}</td>)}<td><div className="flex"><Button variant="ghost" size="sm" onClick={()=>{setEditing(i);setContactDraft({...contact});}}>Edit</Button><Button title="Remove contact" aria-label={`Remove contact ${i+1}`} variant="ghost" size="icon" onClick={()=>setContacts(contacts.filter((_,j)=>j!==i))}><Trash2 size={13}/></Button></div></td></tr>)}</tbody></table></div></>}
- {tab==='Address Details' && <><div className="table-toolbar"><strong>Registered business address</strong><span className="badge">Primary address</span></div><div className="field-grid !p-0">{addressFields.map(f=><Field key={f} label={f} required><input maxLength={200} value={address[f]} onChange={e=>setAddress({...address,[f]:e.target.value})}/></Field>)}</div></>}
- {tab==='Attachments' && <><div className="table-toolbar"><div><strong>Required documents</strong><small>{type} · {uploaded} of {requiredDocs.length} attached</small></div><span className="text-[10px] text-muted-foreground">PDF, JPG, PNG · Max 10 MB</span></div><div className="table-scroll"><table className="data-table"><thead><tr><th>Document Code</th><th>Document Name</th><th>Attachment</th><th>Status</th><th/></tr></thead><tbody>{requiredDocs.map(doc=><tr key={doc.code}><td className="text-primary">{doc.code}</td><td>{doc.name}</td><td><input className="upload-input" type="file" aria-label={`Upload ${doc.name}`} accept=".pdf,.jpg,.jpeg,.png" onChange={e=>{const file=e.target.files?.[0];if(!file)return;if(file.size>10*1024*1024||!['application/pdf','image/jpeg','image/png'].includes(file.type)){setMessage('Choose a PDF, JPG or PNG file no larger than 10 MB.');e.target.value='';return;}setUploads({...uploads,[doc.code]:file.name});setMessage('');}}/>{uploads[doc.code] && <small className="block mt-1 text-muted-foreground">{uploads[doc.code]}</small>}</td><td><span className={`badge ${uploads[doc.code]?'':'pending'}`}>{uploads[doc.code]?'Attached':'Required'}</span></td><td>{uploads[doc.code]&&<Button variant="ghost" size="icon" aria-label={`Remove ${doc.name}`} onClick={()=>{const next={...uploads};delete next[doc.code];setUploads(next);}}><X/></Button>}</td></tr>)}</tbody></table></div></>}
- </div></section>
- {tab!=='Attachments'&&<section className="document-overview"><div className="section-heading"><h2>Attachments</h2><span>Required for {type} <span className="ml-3 text-primary">{uploaded}/{requiredDocs.length}</span></span></div><div className="document-cards">{requiredDocs.map(doc=><div key={doc.code} className={`document-card ${uploads[doc.code]?'':'pending'}`}><div className="flex justify-between"><FileText size={19}/>{uploads[doc.code]&&<Check size={14}/>}</div><div className="document-code">{doc.code}</div><h3>{doc.name}</h3><small>{uploads[doc.code]||'Awaiting upload'}</small><div className="document-progress" data-complete={Boolean(uploads[doc.code])}/></div>)}</div></section>}
- {message&&<div role="status" className={`notice ${submitted?'success':message.startsWith('Draft')?'':'error'}`}>{message}</div>}
- <div className="action-footer"><small><LockKeyhole size={12}/> Invitation-based supplier registration</small><div className="flex gap-2"><Button variant="outline" size="sm" onClick={()=>setMessage('Draft retained for this preview session only.')}><Save/>Save draft</Button><Button size="sm" onClick={submit} disabled={submitted}>{submitted?<CheckCircle2/>:<ArrowRight/>}{submitted?'Submitted':'Submit registration'}</Button></div></div>
- {editing!==null&&<div className="modal-backdrop"><div className="modal" role="dialog" aria-modal="true" aria-label="Contact person"><div className="flex justify-between"><h2>{editing===-1?'Add':'Edit'} contact person</h2><Button variant="ghost" size="icon" aria-label="Close contact form" onClick={()=>setEditing(null)}><X/></Button></div><div className="grid grid-cols-2 gap-x-4">{contactFields.map(f=><Field key={f} label={f} required><input type={f==='Email'?'email':'text'} maxLength={200} value={contactDraft[f]} onChange={e=>setContactDraft({...contactDraft,[f]:e.target.value})}/></Field>)}</div>{message&&<div className="notice error">{message}</div>}<div className="modal-actions"><Button variant="outline" onClick={()=>setEditing(null)}>Cancel</Button><Button onClick={saveContact}><Check/>Save contact</Button></div></div></div>}
- </>;
+const registrationSchema = z.object({
+  Name: text,
+  Email: z.string().email().max(255),
+  "Phone No": z.string().regex(/^[+\d\s()-]{7,25}$/),
+  "Type of Business": z.enum(["Individual", "Corporate", "Government"]),
+  Currency: z.enum(["LKR", "USD", "EUR", "GBP"]),
+  "Business Registration No": text,
+  Username: z.string().regex(/^[a-zA-Z0-9_.-]{3,50}$/),
+  Password: z.string().min(8).max(128),
+  Remark: z.string().max(1000),
+});
+export function Field({
+  label,
+  children,
+  required = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  required?: boolean;
+}) {
+  return (
+    <label className="field">
+      <span className="field-label">
+        {label}
+        {required && <span className="required-star">*</span>}
+      </span>
+      {children}
+    </label>
+  );
 }
-function UserIcon(){return <ShieldCheck size={12}/>;}
+export function Registration() {
+  const { role, documents, registerSupplier } = useWorkspace();
+  const router = useRouter();
+  const [header, setHeader] = useState(initialHeader);
+  const [tab, setTab] = useState("Contact Persons");
+  const [contacts, setContacts] = useState<Record<string, string>[]>([
+    {
+      "First name": "Rukshan",
+      "Last name": "Perera",
+      NIC: "871234567V",
+      Mobile: "+94 77 204 8813",
+      Email: "r.perera@northwind.example",
+      Title: "Mr",
+      Position: "Procurement Lead",
+      Address: "No. 12, Temple Road, Colombo",
+    },
+    {
+      "First name": "Dilani",
+      "Last name": "Fernando",
+      NIC: "903311204X",
+      Mobile: "+94 71 998 2210",
+      Email: "d.fernando@northwind.example",
+      Title: "Ms",
+      Position: "Accounts Officer",
+      Address: "Lot 7, Kandy Road, Peradeniya",
+    },
+  ]);
+  const [address, setAddress] = useState<Record<string, string>>({
+    Address: "Head Office",
+    "House no": "12",
+    Building: "Northwind House",
+    Street: "Temple Road",
+    City: "Colombo",
+    Country: "Sri Lanka",
+    State: "Western Province",
+    Zipcode: "00300",
+  });
+  const [uploads, setUploads] = useState<Record<string, string>>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [message, setMessage] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [editing, setEditing] = useState<number | null>(null);
+  const [contactDraft, setContactDraft] = useState<Record<string, string>>({});
+  const type = header["Type of Business"] as BusinessType;
+  const requiredDocs = documents[type];
+  const uploaded = requiredDocs.filter((doc) => uploads[doc.code]).length;
+  function saveContact() {
+    const valid = z
+      .object({
+        "First name": text,
+        "Last name": text,
+        NIC: text,
+        Mobile: z.string().regex(/^[+\d\s()-]{7,25}$/),
+        Email: z.string().email(),
+        Title: text,
+        Position: text,
+        Address: text,
+      })
+      .safeParse(contactDraft);
+    if (!valid.success) {
+      setMessage("Please complete all contact fields and enter a valid email and mobile number.");
+      return;
+    }
+    setContacts(
+      editing === -1
+        ? [...contacts, contactDraft]
+        : contacts.map((c, i) => (i === editing ? contactDraft : c)),
+    );
+    setEditing(null);
+    setMessage("");
+  }
+  function submit() {
+    const valid = registrationSchema.safeParse(header);
+    if (!valid.success) {
+      setMessage(valid.error.issues.map((i) => `${i.path.join("")}: ${i.message}`).join(" · "));
+      return;
+    }
+    if (!contacts.length || addressFields.some((f) => !address[f]?.trim())) {
+      setMessage("Complete contact persons and all address details before submitting.");
+      return;
+    }
+    if (uploaded !== requiredDocs.length) {
+      setTab("Attachments");
+      setMessage("Upload every required document for your selected business type.");
+      return;
+    }
+    setSubmitted(true);
+    registerSupplier({
+      name: header.Name,
+      email: header.Email,
+      phone: header["Phone No"],
+      businessType: header["Type of Business"] as BusinessType,
+      currency: header.Currency,
+      registrationNo: header["Business Registration No"],
+      username: header.Username,
+      password: header.Password || "password123",
+      remark: header.Remark,
+      contactsCount: contacts.length,
+      documentsAttached: uploaded,
+      totalDocumentsRequired: requiredDocs.length,
+    });
+    setMessage("Registration submitted successfully! Redirecting to login page...");
+    setTimeout(() => {
+      router.navigate({ to: "/login" });
+    }, 600);
+  }
+  if (role !== "supplier") return <AccessNotice audience="supplier" />;
+  return (
+    <>
+      <div className="registration-banner">
+        <div>
+          <div className="banner-eyebrow">
+            <Mail size={13} /> EMAIL INVITATION LINK <span> / </span> SUPPLIER ONBOARDING
+          </div>
+          <h1>Supplier Registration</h1>
+          <p>
+            {header.Name || "New Supplier"} · {type} business onboarding form
+          </p>
+          <div className="mt-2.5 text-xs opacity-90 flex items-center gap-2">
+            <span>Direct link from invitation email</span>
+            <span>·</span>
+            <Link to="/login" className="underline hover:opacity-100 font-medium">
+              Already have credentials? Log in here
+            </Link>
+          </div>
+        </div>
+        <div className="banner-status">
+          <small>INVITATION LINK STATUS</small>
+          <strong>{submitted ? "Submitted & Redirecting..." : "Active Invitation"}</strong>
+          <div className="mt-2 flex items-center gap-2 text-[10px] opacity-80">
+            <span className="status-dot" />
+            {uploaded} of {requiredDocs.length} documents attached
+          </div>
+        </div>
+      </div>
+      <div className="invitation-note">
+        <CheckCircle2 size={13} /> Secure email invitation verified · Complete company profile,
+        contacts, and attachments{" "}
+        <span className="ml-auto">
+          Required fields <span className="text-primary">*</span>
+        </span>
+      </div>
+      <section className="form-section">
+        <div className="section-heading">
+          <h2>Registration Header</h2>
+          <span>Company & account information</span>
+        </div>
+        <div className="field-grid">
+          {Object.entries(header).map(([key, value]) => (
+            <div key={key} className={key === "Remark" ? "field-wide" : ""}>
+              <Field label={key} required={key !== "Remark"}>
+                {key === "Type of Business" ? (
+                  <select
+                    value={value}
+                    onChange={(e) => {
+                      setHeader({ ...header, [key]: e.target.value });
+                      setSubmitted(false);
+                    }}
+                  >
+                    {businessTypes.map((t) => (
+                      <option key={t}>{t}</option>
+                    ))}
+                  </select>
+                ) : key === "Currency" ? (
+                  <select
+                    value={value}
+                    onChange={(e) => setHeader({ ...header, [key]: e.target.value })}
+                  >
+                    {["LKR", "USD", "EUR", "GBP"].map((c) => (
+                      <option key={c}>{c}</option>
+                    ))}
+                  </select>
+                ) : key === "Remark" ? (
+                  <textarea
+                    maxLength={1000}
+                    value={value}
+                    onChange={(e) => setHeader({ ...header, [key]: e.target.value })}
+                  />
+                ) : key === "Password" ? (
+                  <div className="password-wrap">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      placeholder="Create a password"
+                      maxLength={128}
+                      value={value}
+                      onChange={(e) => setHeader({ ...header, [key]: e.target.value })}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff /> : <Eye />}
+                    </Button>
+                  </div>
+                ) : (
+                  <input
+                    type={key === "Email" ? "email" : "text"}
+                    maxLength={200}
+                    value={value}
+                    onChange={(e) => setHeader({ ...header, [key]: e.target.value })}
+                  />
+                )}
+              </Field>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section className="child-section">
+        <div className="child-tabs" role="tablist" aria-label="Registration details">
+          {[
+            { name: "Contact Persons", icon: Users, count: contacts.length },
+            { name: "Address Details", icon: MapPin, count: 1 },
+            { name: "Attachments", icon: Paperclip, count: requiredDocs.length },
+          ].map((t) => (
+            <Button
+              key={t.name}
+              variant="tab"
+              role="tab"
+              aria-selected={tab === t.name}
+              data-active={tab === t.name}
+              onClick={() => setTab(t.name)}
+            >
+              <t.icon />
+              {t.name}
+              <span className="tab-count">{t.count}</span>
+            </Button>
+          ))}
+        </div>
+        <div className="child-body" role="tabpanel">
+          {tab === "Contact Persons" && (
+            <>
+              <div className="table-toolbar">
+                <div>
+                  <strong>Contact persons</strong>
+                  <small>{contacts.length} contacts associated with this supplier</small>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setEditing(-1);
+                    setContactDraft(Object.fromEntries(contactFields.map((f) => [f, ""])));
+                  }}
+                >
+                  <Plus />
+                  Add contact person
+                </Button>
+              </div>
+              <div className="table-scroll">
+                <table className="data-table contact-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      {contactFields.map((f) => (
+                        <th key={f}>{f}</th>
+                      ))}
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {contacts.map((contact, i) => (
+                      <tr key={i}>
+                        <td className="row-number">{String(i + 1).padStart(2, "0")}</td>
+                        {contactFields.map((f) => (
+                          <td key={f}>{contact[f]}</td>
+                        ))}
+                        <td>
+                          <div className="flex">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditing(i);
+                                setContactDraft({ ...contact });
+                              }}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              title="Remove contact"
+                              aria-label={`Remove contact ${i + 1}`}
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setContacts(contacts.filter((_, j) => j !== i))}
+                            >
+                              <Trash2 size={13} />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+          {tab === "Address Details" && (
+            <>
+              <div className="table-toolbar">
+                <strong>Registered business address</strong>
+                <span className="badge">Primary address</span>
+              </div>
+              <div className="field-grid !p-0">
+                {addressFields.map((f) => (
+                  <Field key={f} label={f} required>
+                    <input
+                      maxLength={200}
+                      value={address[f]}
+                      onChange={(e) => setAddress({ ...address, [f]: e.target.value })}
+                    />
+                  </Field>
+                ))}
+              </div>
+            </>
+          )}
+          {tab === "Attachments" && (
+            <>
+              <div className="table-toolbar">
+                <div>
+                  <strong>Required documents</strong>
+                  <small>
+                    {type} · {uploaded} of {requiredDocs.length} attached
+                  </small>
+                </div>
+                <span className="text-[10px] text-muted-foreground">PDF, JPG, PNG · Max 10 MB</span>
+              </div>
+              <div className="table-scroll">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Document Code</th>
+                      <th>Document Name</th>
+                      <th>Attachment</th>
+                      <th>Status</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {requiredDocs.map((doc) => (
+                      <tr key={doc.code}>
+                        <td className="text-primary">{doc.code}</td>
+                        <td>{doc.name}</td>
+                        <td>
+                          <input
+                            className="upload-input"
+                            type="file"
+                            aria-label={`Upload ${doc.name}`}
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              if (
+                                file.size > 10 * 1024 * 1024 ||
+                                !["application/pdf", "image/jpeg", "image/png"].includes(file.type)
+                              ) {
+                                setMessage("Choose a PDF, JPG or PNG file no larger than 10 MB.");
+                                e.target.value = "";
+                                return;
+                              }
+                              setUploads({ ...uploads, [doc.code]: file.name });
+                              setMessage("");
+                            }}
+                          />
+                          {uploads[doc.code] && (
+                            <small className="block mt-1 text-muted-foreground">
+                              {uploads[doc.code]}
+                            </small>
+                          )}
+                        </td>
+                        <td>
+                          <span className={`badge ${uploads[doc.code] ? "" : "pending"}`}>
+                            {uploads[doc.code] ? "Attached" : "Required"}
+                          </span>
+                        </td>
+                        <td>
+                          {uploads[doc.code] && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`Remove ${doc.name}`}
+                              onClick={() => {
+                                const next = { ...uploads };
+                                delete next[doc.code];
+                                setUploads(next);
+                              }}
+                            >
+                              <X />
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
+      </section>
+      {tab !== "Attachments" && (
+        <section className="document-overview">
+          <div className="section-heading">
+            <h2>Attachments</h2>
+            <span>
+              Required for {type}{" "}
+              <span className="ml-3 text-primary">
+                {uploaded}/{requiredDocs.length}
+              </span>
+            </span>
+          </div>
+          <div className="document-cards">
+            {requiredDocs.map((doc) => (
+              <div key={doc.code} className={`document-card ${uploads[doc.code] ? "" : "pending"}`}>
+                <div className="flex justify-between">
+                  <FileText size={19} />
+                  {uploads[doc.code] && <Check size={14} />}
+                </div>
+                <div className="document-code">{doc.code}</div>
+                <h3>{doc.name}</h3>
+                <small>{uploads[doc.code] || "Awaiting upload"}</small>
+                <div className="document-progress" data-complete={Boolean(uploads[doc.code])} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+      {message && (
+        <div
+          role="status"
+          className={`notice ${submitted ? "success" : message.startsWith("Draft") ? "" : "error"}`}
+        >
+          {message}
+        </div>
+      )}
+      <div className="action-footer">
+        <small>
+          <LockKeyhole size={12} /> Email invitation link · Submitting redirects to login page
+        </small>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setMessage("Draft retained for this preview session only.")}
+          >
+            <Save />
+            Save draft
+          </Button>
+          <Button size="sm" onClick={submit} disabled={submitted}>
+            {submitted ? <CheckCircle2 /> : <ArrowRight />}
+            {submitted ? "Redirecting to login..." : "Submit registration"}
+          </Button>
+        </div>
+      </div>
+      {editing !== null && (
+        <div className="modal-backdrop">
+          <div className="modal" role="dialog" aria-modal="true" aria-label="Contact person">
+            <div className="flex justify-between">
+              <h2>{editing === -1 ? "Add" : "Edit"} contact person</h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Close contact form"
+                onClick={() => setEditing(null)}
+              >
+                <X />
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-x-4">
+              {contactFields.map((f) => (
+                <Field key={f} label={f} required>
+                  <input
+                    type={f === "Email" ? "email" : "text"}
+                    maxLength={200}
+                    value={contactDraft[f]}
+                    onChange={(e) => setContactDraft({ ...contactDraft, [f]: e.target.value })}
+                  />
+                </Field>
+              ))}
+            </div>
+            {message && <div className="notice error">{message}</div>}
+            <div className="modal-actions">
+              <Button variant="outline" onClick={() => setEditing(null)}>
+                Cancel
+              </Button>
+              <Button onClick={saveContact}>
+                <Check />
+                Save contact
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+function UserIcon() {
+  return <ShieldCheck size={12} />;
+}

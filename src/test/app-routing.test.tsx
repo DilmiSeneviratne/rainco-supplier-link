@@ -14,4 +14,26 @@ describe("App routing", () => {
 
     expect(matches.at(-1)?.routeId).not.toBe(rootRouteId);
   });
+
+  it("matches routes for /register and /login", () => {
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+
+    const registerMatches = router.matchRoutes("/register");
+    expect(registerMatches.at(-1)?.routeId).not.toBe(rootRouteId);
+
+    const loginMatches = router.matchRoutes("/login");
+    expect(loginMatches.at(-1)?.routeId).not.toBe(rootRouteId);
+
+    const stagesMatches = router.matchRoutes("/approval-stages");
+    expect(stagesMatches.at(-1)?.routeId).not.toBe(rootRouteId);
+
+    const templateMatches = router.matchRoutes("/approval-template");
+    expect(templateMatches.at(-1)?.routeId).not.toBe(rootRouteId);
+
+    const queueMatches = router.matchRoutes("/approval-queue");
+    expect(queueMatches.at(-1)?.routeId).not.toBe(rootRouteId);
+
+    const evalMatches = router.matchRoutes("/evaluation");
+    expect(evalMatches.at(-1)?.routeId).not.toBe(rootRouteId);
+  });
 });
