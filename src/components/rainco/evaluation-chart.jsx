@@ -141,40 +141,6 @@ function EvaluationBubbleChartCanvas({ chartData }) {
       </div>
     </div>);
 }
-function EvaluationChartSummaryTable({ chartData }) {
-    return (<div className="overflow-x-auto rounded border border-border">
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>Supplier Code</th>
-            <th>Name</th>
-            <th className="text-right">Desirability Score</th>
-            <th className="text-right">Feasibility Score</th>
-            <th className="text-right">Rating</th>
-            <th className="text-center">Grade</th>
-          </tr>
-        </thead>
-        <tbody>
-          {chartData.map((item) => (<tr key={item.supplierCode}>
-              <td className="font-mono text-xs text-primary font-semibold">{item.supplierCode}</td>
-              <td className="font-medium text-foreground">{item.supplierName}</td>
-              <td className="text-right font-mono tabular-nums text-xs text-foreground">
-                {item.desirabilityScore}%
-              </td>
-              <td className="text-right font-mono tabular-nums text-xs text-foreground">
-                {item.feasibilityScore}%
-              </td>
-              <td className="text-right font-mono tabular-nums text-xs font-bold text-primary">
-                {item.rating}%
-              </td>
-              <td className="text-center">
-                <span className="badge font-mono font-bold">{item.grade}</span>
-              </td>
-            </tr>))}
-        </tbody>
-      </table>
-    </div>);
-}
 export function EvaluationChartPage() {
     const { role, suppliersList, evaluations } = useWorkspace();
     const [filterSupplier, setFilterSupplier] = useState("ALL");
@@ -246,7 +212,6 @@ export function EvaluationChartPage() {
         </div>
 
         <EvaluationBubbleChartCanvas chartData={chartData}/>
-        <EvaluationChartSummaryTable chartData={chartData}/>
       </div>
     </>);
 }

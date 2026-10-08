@@ -3,7 +3,8 @@ import { z } from "zod";
 import { Check, Plus, Save, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field } from "./registration";
-import { AccessNotice, PageHeading, businessTypes, useWorkspace, } from "./workspace";
+import { AccessNotice, PageHeading, useWorkspace, } from "./workspace";
+import { businessTypes, } from "./workspace-types";
 function ChecklistDocumentsTable({ type, rows, onRemove, }) {
     return (<div className="master-table">
       <div className="section-heading">

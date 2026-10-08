@@ -388,9 +388,12 @@ export function WorkspaceProvider({ children }) {
         createApprovalProcessForSection("Supplier Registration", updatedSupplier.registrationNo || supplierName, supplierName, supplierEmail);
     };
     const activeSupplierApprovalProcess = approvalProcesses.find((p) => p.processType === "Supplier Registration" && p.supplierName === supplier.name) || approvalProcesses[0];
-    const login = () => {
+    const login = (username, _password, loginRole) => {
+        const trimmed = username.trim().toLowerCase();
+        const matchedRaincoUser = systemUsers.find((u) => u.username.toLowerCase() === trimmed || u.email.toLowerCase() === trimmed);
+        const resolvedRole = loginRole ?? (matchedRaincoUser ? "rainco" : "supplier");
         setIsLoggedIn(true);
-        setRole("supplier");
+        setRole(resolvedRole);
         return true;
     };
     const logout = () => {

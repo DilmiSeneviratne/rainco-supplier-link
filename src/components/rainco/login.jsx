@@ -5,18 +5,35 @@ import { ArrowRight, CheckCircle2, Eye, EyeOff, Lock, Mail, ShieldCheck, User } 
 import { Button } from "@/components/ui/button";
 import { RaincoLogo, useWorkspace } from "./workspace";
 export function Login() {
-    const { supplier, login, lastRegistrationNotice, setLastRegistrationNotice } = useWorkspace();
+    const { supplier, systemUsers, login, lastRegistrationNotice, setLastRegistrationNotice } = useWorkspace();
     const router = useRouter();
+    const [loginType, setLoginType] = useState("supplier");
     const [username, setUsername] = useState(supplier.username || "leabon_ops");
     const [password, setPassword] = useState(supplier.password || "password123");
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const defaultRaincoUser = systemUsers[0] ?? {
+        username: "sunil.j",
+        password: "password123",
+    };
+    const handleRoleSwitch = (nextRole) => {
+        setLoginType(nextRole);
+        setError("");
+        if (nextRole === "supplier") {
+            setUsername(supplier.username || "leabon_ops");
+            setPassword(supplier.password || "password123");
+        }
+        else {
+            setUsername(defaultRaincoUser.username);
+            setPassword(defaultRaincoUser.password || "password123");
+        }
+    };
     const handleSubmit = (e) => {
         e.preventDefault();
         setError("");
         if (!username.trim()) {
-            setError("Please enter your registered username or email.");
+            setError("Please enter your username or email.");
             return;
         }
         if (!password) {
@@ -25,14 +42,20 @@ export function Login() {
         }
         setLoading(true);
         setTimeout(() => {
-            login(username, password);
+            login(username, password, loginType);
             setLastRegistrationNotice(null);
-            router.navigate({ to: "/" });
+            router.navigate({ to: loginType === "rainco" ? "/evaluation" : "/" });
         }, 350);
     };
     const handlePrefill = () => {
-        setUsername(supplier.username || "leabon_ops");
-        setPassword(supplier.password || "password123");
+        if (loginType === "supplier") {
+            setUsername(supplier.username || "leabon_ops");
+            setPassword(supplier.password || "password123");
+        }
+        else {
+            setUsername(defaultRaincoUser.username);
+            setPassword(defaultRaincoUser.password || "password123");
+        }
         setError("");
     };
     return (<Box sx={{ maxWidth: 440, mx: "auto", py: 4 }}>
@@ -51,7 +74,7 @@ export function Login() {
           <RaincoLogo className="h-10 w-auto"/>
         </Paper>
         <Typography variant="h5" sx={{ fontWeight: 800 }}>
-          Supplier Portal Sign-In
+          {loginType === "supplier" ? "Supplier Portal Sign-In" : "Rainco User Sign-In"}
         </Typography>
       </Box>
 
@@ -69,9 +92,26 @@ export function Login() {
             borderRadius: 2.5,
             border: "1px solid rgba(0,0,0,0.06)",
         }}>
+        <Box sx={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 1,
+            p: 0.5,
+            mb: 2.5,
+            borderRadius: 2,
+            bgcolor: "rgba(0,0,0,0.04)",
+        }}>
+          <Button type="button" size="sm" variant={loginType === "supplier" ? "default" : "ghost"} onClick={() => handleRoleSwitch("supplier")} className="h-8 text-xs font-semibold">
+            Login as Supplier
+          </Button>
+          <Button type="button" size="sm" variant={loginType === "rainco" ? "default" : "ghost"} onClick={() => handleRoleSwitch("rainco")} className="h-8 text-xs font-semibold">
+            Login as Rainco User
+          </Button>
+        </Box>
+
         <Box component="form" onSubmit={handleSubmit}>
           <Stack spacing={2.25}>
-            <TextField label="Username or Email" size="small" fullWidth value={username} onChange={(e) => setUsername(e.target.value)} placeholder="e.g. leabon_ops" autoComplete="username" slotProps={{
+            <TextField label="Username or Email" size="small" fullWidth value={username} onChange={(e) => setUsername(e.target.value)} placeholder={loginType === "supplier" ? "e.g. leabon_ops" : "e.g. sunil.j"} autoComplete="username" slotProps={{
             input: {
                 startAdornment: (<InputAdornment position="start">
                       <User size={15}/>
@@ -85,7 +125,7 @@ export function Login() {
                   Account Password
                 </Typography>
                 <button type="button" onClick={handlePrefill} className="text-[11px] text-primary hover:underline font-semibold">
-                  Pre-fill registered details
+                  Pre-fill sample credentials
                 </button>
               </Stack>
               <TextField label="Password" size="small" fullWidth type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••••••" autoComplete="current-password" slotProps={{
@@ -107,7 +147,13 @@ export function Login() {
               </Alert>)}
 
             <Button type="submit" disabled={loading} className="w-full h-9">
-              <span>{loading ? "Signing in..." : "Sign In to Supplier Portal"}</span>
+              <span>
+                {loading
+            ? "Signing in..."
+            : loginType === "supplier"
+                ? "Sign In to Supplier Portal"
+                : "Sign In as Rainco User"}
+              </span>
               <ArrowRight size={14}/>
             </Button>
           </Stack>
@@ -116,18 +162,26 @@ export function Login() {
         <Divider sx={{ my: 2.5 }}/>
 
         <Stack spacing={1.25} sx={{ fontSize: "12px", color: "text.secondary" }}>
-          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
-            <span>Need to complete registration?</span>
-            <Link to="/register" className="text-primary font-semibold hover:underline inline-flex items-center gap-1">
-              <Mail size={12}/>
-              <span>Email Invitation Link</span>
-            </Link>
-          </Stack>
+          {loginType === "supplier" && (<Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
+              <span>Need to complete registration?</span>
+              <Link to="/register" className="text-primary font-semibold hover:underline inline-flex items-center gap-1">
+                <Mail size={12}/>
+                <span>Supplier Registration</span>
+              </Link>
+            </Stack>)}
           <Paper variant="outlined" sx={{ p: 1.25, bgcolor: "rgba(0,0,0,0.02)", fontSize: "11px", borderRadius: 1.5 }}>
             <strong>Sample Credentials:</strong> Username:{" "}
-            <code className="text-foreground font-mono">{supplier.username || "leabon_ops"}</code> ·
-            Password:{" "}
-            <code className="text-foreground font-mono">{supplier.password || "password123"}</code>
+            <code className="text-foreground font-mono">
+              {loginType === "supplier"
+            ? supplier.username || "leabon_ops"
+            : defaultRaincoUser.username}
+            </code>{" "}
+            · Password:{" "}
+            <code className="text-foreground font-mono">
+              {loginType === "supplier"
+            ? supplier.password || "password123"
+            : defaultRaincoUser.password || "password123"}
+            </code>
           </Paper>
         </Stack>
       </Paper>

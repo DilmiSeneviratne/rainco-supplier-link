@@ -102,36 +102,41 @@ function SidebarUserFooter({ isMobile, onCloseMobile, }) {
             {role === "supplier" ? supplier.name : "Rainco Procurement"}
           </Typography>
           <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "10px" }}>
-            {role === "supplier" ? (isLoggedIn ? "Authenticated" : "Logged Out") : "Rainco Admin"} ·
-            MUI
+            {role === "supplier"
+            ? isLoggedIn
+                ? "Supplier · Logged In"
+                : "Supplier · Logged Out"
+            : isLoggedIn
+                ? "Rainco User · Logged In"
+                : "Rainco User · Logged Out"}
           </Typography>
         </Box>
-        {role === "supplier" &&
-            (isLoggedIn ? (<Tooltip title="Sign out to Login screen">
-              <IconButton size="small" color="error" onClick={() => {
-                    logout();
-                    if (isMobile)
-                        onCloseMobile();
-                    router.navigate({ to: "/login" });
-                }}>
-                <LogOut size={14}/>
-              </IconButton>
-            </Tooltip>) : (<Tooltip title="Sign in to portal">
-              <IconButton size="small" color="primary" component={Link} to="/login" onClick={isMobile ? onCloseMobile : undefined}>
-                <LogIn size={14}/>
-              </IconButton>
-            </Tooltip>))}
-        {role === "rainco" && <ShieldCheck size={16} className="text-primary"/>}
+        {isLoggedIn ? (<Tooltip title="Sign out to Login screen">
+            <IconButton size="small" color="error" onClick={() => {
+                logout();
+                if (isMobile)
+                    onCloseMobile();
+                router.navigate({ to: "/login" });
+            }}>
+              <LogOut size={14}/>
+            </IconButton>
+          </Tooltip>) : (<Tooltip title="Sign in">
+            <IconButton size="small" color="primary" component={Link} to="/login" onClick={isMobile ? onCloseMobile : undefined}>
+              <LogIn size={14}/>
+            </IconButton>
+          </Tooltip>)}
       </Paper>
     </Box>);
 }
 export function WorkspaceSidebarContent({ isMobile = false, pathname, onCloseMobile, }) {
-    const { role, setRole } = useWorkspace();
+    const { role, setRole, isLoggedIn } = useWorkspace();
     const [mastersOpen, setMastersOpen] = useState(true);
     const [adminOpen, setAdminOpen] = useState(true);
     const [approvalsOpen, setApprovalsOpen] = useState(true);
     const [evaluationOpen, setEvaluationOpen] = useState(true);
     const handleItemClick = isMobile ? onCloseMobile : undefined;
+    const isSupplierPortalDisabled = isLoggedIn && role === "rainco";
+    const isSupplierEvaluationDisabled = isLoggedIn && role === "supplier";
     return (<>
       <Box sx={{
             display: "flex",
@@ -171,7 +176,10 @@ export function WorkspaceSidebarContent({ isMobile = false, pathname, onCloseMob
             }}>
             WORKSPACE
           </ListSubheader>} sx={{ px: 1, flex: 1, overflowY: "auto" }}>
-        <ListItemButton selected={role === "supplier"} onClick={() => setRole("supplier")} sx={{
+        <ListItemButton selected={role === "supplier"} disabled={isSupplierPortalDisabled} onClick={() => {
+            if (!isSupplierPortalDisabled)
+                setRole("supplier");
+        }} sx={{
             borderRadius: 1.5,
             mb: 0.5,
             py: 0.9,
@@ -190,7 +198,7 @@ export function WorkspaceSidebarContent({ isMobile = false, pathname, onCloseMob
           {role === "supplier" && <ChevronDown size={14}/>}
         </ListItemButton>
 
-        <Collapse in={role === "supplier"} timeout="auto" unmountOnExit>
+        <Collapse in={role === "supplier" && !isSupplierPortalDisabled} timeout="auto" unmountOnExit>
           <List component="div" disablePadding sx={{ pl: 1.5, mb: 1 }}>
             {portalNav.map((item) => (<ListItemButton key={item.to} component={Link} to={item.to} onClick={handleItemClick} selected={pathname === item.to} sx={{
                 borderRadius: 1.5,
@@ -217,7 +225,10 @@ export function WorkspaceSidebarContent({ isMobile = false, pathname, onCloseMob
           </List>
         </Collapse>
 
-        <ListItemButton selected={role === "rainco"} onClick={() => setRole("rainco")} sx={{
+        <ListItemButton selected={role === "rainco"} disabled={isSupplierEvaluationDisabled} onClick={() => {
+            if (!isSupplierEvaluationDisabled)
+                setRole("rainco");
+        }} sx={{
             borderRadius: 1.5,
             mb: 0.5,
             py: 0.9,
@@ -236,7 +247,7 @@ export function WorkspaceSidebarContent({ isMobile = false, pathname, onCloseMob
           {role === "rainco" && <ChevronDown size={14}/>}
         </ListItemButton>
 
-        <Collapse in={role === "rainco"} timeout="auto" unmountOnExit>
+        <Collapse in={role === "rainco" && !isSupplierEvaluationDisabled} timeout="auto" unmountOnExit>
           <List component="div" disablePadding sx={{ pl: 1 }}>
             <SidebarCollapsibleSection label="Masters" icon={Layers3} open={mastersOpen} onToggle={() => setMastersOpen((prev) => !prev)} items={mastersNav} pathname={pathname} onItemClick={handleItemClick}/>
             <SidebarCollapsibleSection label="Administration" icon={ShieldCheck} open={adminOpen} onToggle={() => setAdminOpen((prev) => !prev)} items={adminNav} pathname={pathname} onItemClick={handleItemClick}/>

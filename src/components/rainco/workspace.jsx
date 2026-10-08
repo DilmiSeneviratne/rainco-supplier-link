@@ -4,6 +4,7 @@ import { Drawer, Paper } from "@mui/material";
 import { WorkspaceSidebarContent } from "./workspace-sidebar";
 import { WorkspaceFooter, WorkspaceTopBar } from "./workspace-topbar";
 export { raincoMuiTheme } from "./workspace-theme";
+export { businessTypes } from "./workspace-types";
 export * from "./workspace-data";
 export * from "./workspace-context";
 export * from "./workspace-ui";
