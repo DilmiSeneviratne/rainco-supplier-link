@@ -1,0 +1,227 @@
+import { useState } from "react";
+import { z } from "zod";
+import { Check, Plus, Save, Trash2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Field } from "./registration";
+import {
+  AccessNotice,
+  PageHeading,
+  businessTypes,
+  useWorkspace,
+  type BusinessType,
+  type DocumentRow,
+} from "./workspace";
+
+function ChecklistDocumentsTable({
+  type,
+  rows,
+  onRemove,
+}: {
+  type: BusinessType;
+  rows: DocumentRow[];
+  onRemove: (code: string) => void;
+}) {
+  return (
+    <div className="master-table">
+      <div className="section-heading">
+        <h2>{type} documents</h2>
+      </div>
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Document Code</th>
+            <th>Document Name</th>
+            <th />
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((d, i) => (
+            <tr key={d.code}>
+              <td className="row-number">{String(i + 1).padStart(2, "0")}</td>
+              <td className="text-primary">{d.code}</td>
+              <td>{d.name}</td>
+              <td className="text-right">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Remove ${d.name}`}
+                  onClick={() => onRemove(d.code)}
+                >
+                  <Trash2 />
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {!rows.length && (
+        <p className="p-6 text-sm text-muted-foreground">No required documents added.</p>
+      )}
+    </div>
+  );
+}
+
+function AddDocumentModal({
+  code,
+  name,
+  message,
+  onCodeChange,
+  onNameChange,
+  onClose,
+  onAdd,
+}: {
+  code: string;
+  name: string;
+  message: string;
+  onCodeChange: (val: string) => void;
+  onNameChange: (val: string) => void;
+  onClose: () => void;
+  onAdd: () => void;
+}) {
+  return (
+    <div className="modal-backdrop">
+      <div className="modal" role="dialog" aria-modal="true" aria-label="Add required document">
+        <div className="flex justify-between">
+          <h2>Add required document</h2>
+          <Button variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+            <X />
+          </Button>
+        </div>
+        <Field label="Document Code" required>
+          <input
+            value={code}
+            maxLength={30}
+            placeholder="COR-005"
+            onChange={(e) => onCodeChange(e.target.value)}
+          />
+        </Field>
+        <Field label="Document Name" required>
+          <input
+            value={name}
+            maxLength={150}
+            placeholder="Document name"
+            onChange={(e) => onNameChange(e.target.value)}
+          />
+        </Field>
+        {message && <div className="notice error">{message}</div>}
+        <div className="modal-actions">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={onAdd}>
+            <Check />
+            Add document
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function Checklist() {
+  const { role, documents, setDocuments } = useWorkspace();
+  const [type, setType] = useState<BusinessType>("Corporate");
+  const [adding, setAdding] = useState(false);
+  const [code, setCode] = useState("");
+  const [name, setName] = useState("");
+  const [message, setMessage] = useState("");
+
+  function add() {
+    const result = z
+      .object({
+        code: z
+          .string()
+          .trim()
+          .regex(/^[A-Za-z0-9_-]{1,30}$/),
+        name: z.string().trim().min(1).max(150),
+      })
+      .safeParse({ code, name });
+    if (!result.success) {
+      setMessage("Enter a document code using letters, numbers or hyphens, and a document name.");
+      return;
+    }
+    if (
+      Object.values(documents)
+        .flat()
+        .some((d) => d.code === code.trim())
+    ) {
+      setMessage("Document code must be unique.");
+      return;
+    }
+    setDocuments({ ...documents, [type]: [...documents[type], result.data] });
+    setAdding(false);
+    setMessage("");
+  }
+
+  if (role !== "rainco") return <AccessNotice audience="rainco" />;
+
+  return (
+    <>
+      <PageHeading eyebrow="MASTER DATA" title="Supplier Checklist" />
+      <div className="master-controls">
+        <Field label="Type of Business">
+          <select value={type} onChange={(e) => setType(e.target.value as BusinessType)}>
+            {businessTypes.map((t) => (
+              <option key={t}>{t}</option>
+            ))}
+          </select>
+        </Field>
+        <Button
+          size="sm"
+          onClick={() => {
+            setAdding(true);
+            setCode("");
+            setName("");
+            setMessage("");
+          }}
+        >
+          <Plus />
+          Add document
+        </Button>
+      </div>
+
+      <ChecklistDocumentsTable
+        type={type}
+        rows={documents[type]}
+        onRemove={(removeCode) =>
+          setDocuments({
+            ...documents,
+            [type]: documents[type].filter((r) => r.code !== removeCode),
+          })
+        }
+      />
+
+      <div className="action-footer">
+        <small>Registration attachments follow this checklist.</small>
+        <Button
+          size="sm"
+          onClick={() =>
+            setMessage(
+              "Checklist saved for this preview session. Supplier attachments now reflect these documents.",
+            )
+          }
+        >
+          <Save />
+          Save checklist
+        </Button>
+      </div>
+      {message && !adding && (
+        <div className="notice" role="status">
+          {message}
+        </div>
+      )}
+      {adding && (
+        <AddDocumentModal
+          code={code}
+          name={name}
+          message={message}
+          onCodeChange={setCode}
+          onNameChange={setName}
+          onClose={() => setAdding(false)}
+          onAdd={add}
+        />
+      )}
+    </>
+  );
+}

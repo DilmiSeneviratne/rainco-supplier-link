@@ -1,52 +1,32 @@
 import { useState } from "react";
-import { Link, useRouter } from "@tanstack/react-router";
+import { useRouter } from "@tanstack/react-router";
 import { z } from "zod";
 import {
   ArrowRight,
-  Check,
   CheckCircle2,
-  Eye,
-  EyeOff,
-  FileText,
   LockKeyhole,
-  Mail,
   MapPin,
   Paperclip,
   Plus,
   Save,
-  ShieldCheck,
   Trash2,
   Users,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AccessNotice, useWorkspace, type BusinessType } from "./workspace";
 import {
-  AccessNotice,
-  businessTypes,
-  RaincoLogo,
-  useWorkspace,
-  type BusinessType,
-} from "./workspace";
-const contactFields = [
-  "First name",
-  "Last name",
-  "NIC",
-  "Mobile",
-  "Email",
-  "Title",
-  "Position",
-  "Address",
-];
-const addressFields = [
-  "Address",
-  "House no",
-  "Building",
-  "Street",
-  "City",
-  "Country",
-  "State",
-  "Zipcode",
-];
+  addressFields,
+  contactFields,
+  ContactPersonModal,
+  DocumentOverviewSection,
+  Field,
+  RegistrationBanner,
+  RegistrationHeaderForm,
+} from "./registration-components";
+
+export { Field };
+
 const initialHeader = {
   Name: "Northwind Traders Ltd",
   Email: "ops@northwind.example",
@@ -58,6 +38,7 @@ const initialHeader = {
   Password: "",
   Remark: "Referred by Rainco procurement team for industrial supply.",
 };
+
 const text = z.string().trim().min(1).max(200);
 const registrationSchema = z.object({
   Name: text,
@@ -70,25 +51,7 @@ const registrationSchema = z.object({
   Password: z.string().min(8).max(128),
   Remark: z.string().max(1000),
 });
-export function Field({
-  label,
-  children,
-  required = false,
-}: {
-  label: string;
-  children: React.ReactNode;
-  required?: boolean;
-}) {
-  return (
-    <label className="field">
-      <span className="field-label">
-        {label}
-        {required && <span className="required-star">*</span>}
-      </span>
-      {children}
-    </label>
-  );
-}
+
 export function Registration() {
   const { role, documents, registerSupplier } = useWorkspace();
   const router = useRouter();
@@ -132,9 +95,11 @@ export function Registration() {
   const [submitted, setSubmitted] = useState(false);
   const [editing, setEditing] = useState<number | null>(null);
   const [contactDraft, setContactDraft] = useState<Record<string, string>>({});
+
   const type = header["Type of Business"] as BusinessType;
   const requiredDocs = documents[type];
   const uploaded = requiredDocs.filter((doc) => uploads[doc.code]).length;
+
   function saveContact() {
     const valid = z
       .object({
@@ -160,6 +125,7 @@ export function Registration() {
     setEditing(null);
     setMessage("");
   }
+
   function submit() {
     const valid = registrationSchema.safeParse(header);
     if (!valid.success) {
@@ -195,35 +161,17 @@ export function Registration() {
       router.navigate({ to: "/login" });
     }, 600);
   }
+
   if (role !== "supplier") return <AccessNotice audience="supplier" />;
+
   return (
     <>
-      <div className="registration-banner">
-        <div>
-          <div className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white shadow-sm mb-2.5">
-            <RaincoLogo className="h-6 w-auto" />
-          </div>
-          <div className="banner-eyebrow">
-            <Mail size={13} /> EMAIL INVITATION LINK <span> / </span> SUPPLIER ONBOARDING
-          </div>
-          <h1>Supplier Registration</h1>
-          <div className="mt-2.5 text-xs opacity-90 flex items-center gap-2">
-            <span>Direct link from invitation email</span>
-            <span>·</span>
-            <Link to="/login" className="underline hover:opacity-100 font-medium">
-              Already have credentials? Log in here
-            </Link>
-          </div>
-        </div>
-        <div className="banner-status">
-          <small>INVITATION LINK STATUS</small>
-          <strong>{submitted ? "Submitted & Redirecting..." : "Active Invitation"}</strong>
-          <div className="mt-2 flex items-center gap-2 text-[10px] opacity-80">
-            <span className="status-dot" />
-            {uploaded} of {requiredDocs.length} documents attached
-          </div>
-        </div>
-      </div>
+      <RegistrationBanner
+        submitted={submitted}
+        uploaded={uploaded}
+        totalRequired={requiredDocs.length}
+      />
+
       <div className="invitation-note">
         <CheckCircle2 size={13} /> Secure email invitation verified · Complete company profile,
         contacts, and attachments{" "}
@@ -231,73 +179,15 @@ export function Registration() {
           Required fields <span className="text-primary">*</span>
         </span>
       </div>
-      <section className="form-section">
-        <div className="section-heading">
-          <h2>Registration Header</h2>
-        </div>
-        <div className="field-grid">
-          {Object.entries(header).map(([key, value]) => (
-            <div key={key} className={key === "Remark" ? "field-wide" : ""}>
-              <Field label={key} required={key !== "Remark"}>
-                {key === "Type of Business" ? (
-                  <select
-                    value={value}
-                    onChange={(e) => {
-                      setHeader({ ...header, [key]: e.target.value });
-                      setSubmitted(false);
-                    }}
-                  >
-                    {businessTypes.map((t) => (
-                      <option key={t}>{t}</option>
-                    ))}
-                  </select>
-                ) : key === "Currency" ? (
-                  <select
-                    value={value}
-                    onChange={(e) => setHeader({ ...header, [key]: e.target.value })}
-                  >
-                    {["LKR", "USD", "EUR", "GBP"].map((c) => (
-                      <option key={c}>{c}</option>
-                    ))}
-                  </select>
-                ) : key === "Remark" ? (
-                  <textarea
-                    maxLength={1000}
-                    value={value}
-                    onChange={(e) => setHeader({ ...header, [key]: e.target.value })}
-                  />
-                ) : key === "Password" ? (
-                  <div className="password-wrap">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      autoComplete="new-password"
-                      placeholder="Create a password"
-                      maxLength={128}
-                      value={value}
-                      onChange={(e) => setHeader({ ...header, [key]: e.target.value })}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff /> : <Eye />}
-                    </Button>
-                  </div>
-                ) : (
-                  <input
-                    type={key === "Email" ? "email" : "text"}
-                    maxLength={200}
-                    value={value}
-                    onChange={(e) => setHeader({ ...header, [key]: e.target.value })}
-                  />
-                )}
-              </Field>
-            </div>
-          ))}
-        </div>
-      </section>
+
+      <RegistrationHeaderForm
+        header={header}
+        setHeader={setHeader}
+        setSubmitted={setSubmitted}
+        showPassword={showPassword}
+        setShowPassword={setShowPassword}
+      />
+
       <section className="child-section">
         <div className="child-tabs" role="tablist" aria-label="Registration details">
           {[
@@ -319,6 +209,7 @@ export function Registration() {
             </Button>
           ))}
         </div>
+
         <div className="child-body" role="tabpanel">
           {tab === "Contact Persons" && (
             <>
@@ -385,6 +276,7 @@ export function Registration() {
               </div>
             </>
           )}
+
           {tab === "Address Details" && (
             <>
               <div className="table-toolbar">
@@ -404,6 +296,7 @@ export function Registration() {
               </div>
             </>
           )}
+
           {tab === "Attachments" && (
             <>
               <div className="table-toolbar">
@@ -485,33 +378,16 @@ export function Registration() {
           )}
         </div>
       </section>
+
       {tab !== "Attachments" && (
-        <section className="document-overview">
-          <div className="section-heading">
-            <h2>Attachments</h2>
-            <span>
-              Required for {type}{" "}
-              <span className="ml-3 text-primary">
-                {uploaded}/{requiredDocs.length}
-              </span>
-            </span>
-          </div>
-          <div className="document-cards">
-            {requiredDocs.map((doc) => (
-              <div key={doc.code} className={`document-card ${uploads[doc.code] ? "" : "pending"}`}>
-                <div className="flex justify-between">
-                  <FileText size={19} />
-                  {uploads[doc.code] && <Check size={14} />}
-                </div>
-                <div className="document-code">{doc.code}</div>
-                <h3>{doc.name}</h3>
-                <small>{uploads[doc.code] || "Awaiting upload"}</small>
-                <div className="document-progress" data-complete={Boolean(uploads[doc.code])} />
-              </div>
-            ))}
-          </div>
-        </section>
+        <DocumentOverviewSection
+          type={type}
+          uploaded={uploaded}
+          requiredDocs={requiredDocs}
+          uploads={uploads}
+        />
       )}
+
       {message && (
         <div
           role="status"
@@ -520,6 +396,7 @@ export function Registration() {
           {message}
         </div>
       )}
+
       <div className="action-footer">
         <small>
           <LockKeyhole size={12} /> Email invitation link · Submitting redirects to login page
@@ -539,48 +416,17 @@ export function Registration() {
           </Button>
         </div>
       </div>
+
       {editing !== null && (
-        <div className="modal-backdrop">
-          <div className="modal" role="dialog" aria-modal="true" aria-label="Contact person">
-            <div className="flex justify-between">
-              <h2>{editing === -1 ? "Add" : "Edit"} contact person</h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Close contact form"
-                onClick={() => setEditing(null)}
-              >
-                <X />
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 gap-x-4">
-              {contactFields.map((f) => (
-                <Field key={f} label={f} required>
-                  <input
-                    type={f === "Email" ? "email" : "text"}
-                    maxLength={200}
-                    value={contactDraft[f]}
-                    onChange={(e) => setContactDraft({ ...contactDraft, [f]: e.target.value })}
-                  />
-                </Field>
-              ))}
-            </div>
-            {message && <div className="notice error">{message}</div>}
-            <div className="modal-actions">
-              <Button variant="outline" onClick={() => setEditing(null)}>
-                Cancel
-              </Button>
-              <Button onClick={saveContact}>
-                <Check />
-                Save contact
-              </Button>
-            </div>
-          </div>
-        </div>
+        <ContactPersonModal
+          editing={editing}
+          setEditing={setEditing}
+          contactDraft={contactDraft}
+          setContactDraft={setContactDraft}
+          message={message}
+          onSave={saveContact}
+        />
       )}
     </>
   );
-}
-function UserIcon() {
-  return <ShieldCheck size={12} />;
 }
