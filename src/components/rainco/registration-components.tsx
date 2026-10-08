@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Check, CheckCircle2, Eye, EyeOff, FileText, Mail, X } from "lucide-react";
+import { Check, Eye, EyeOff, FileText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   businessTypes,
@@ -51,39 +51,19 @@ export function Field({
   );
 }
 
-export function RegistrationBanner({
-  submitted,
-  uploaded,
-  totalRequired,
-}: {
-  submitted: boolean;
-  uploaded: number;
-  totalRequired: number;
-}) {
+export function RegistrationBanner() {
   return (
     <div className="registration-banner">
       <div>
         <div className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white shadow-sm mb-2.5">
           <RaincoLogo className="h-6 w-auto" />
         </div>
-        <div className="banner-eyebrow">
-          <Mail size={13} /> EMAIL INVITATION LINK <span> / </span> SUPPLIER ONBOARDING
-        </div>
+        <div className="banner-eyebrow">SUPPLIER ONBOARDING</div>
         <h1>Supplier Registration</h1>
         <div className="mt-2.5 text-xs opacity-90 flex items-center gap-2">
-          <span>Direct link from invitation email</span>
-          <span>·</span>
           <Link to="/login" className="underline hover:opacity-100 font-medium">
             Already have credentials? Log in here
           </Link>
-        </div>
-      </div>
-      <div className="banner-status">
-        <small>INVITATION LINK STATUS</small>
-        <strong>{submitted ? "Submitted & Redirecting..." : "Active Invitation"}</strong>
-        <div className="mt-2 flex items-center gap-2 text-[10px] opacity-80">
-          <span className="status-dot" />
-          {uploaded} of {totalRequired} documents attached
         </div>
       </div>
     </div>

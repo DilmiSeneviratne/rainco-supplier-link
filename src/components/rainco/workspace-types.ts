@@ -192,7 +192,7 @@ export type WorkspaceContextValue = {
   setSupplier: (s: RegisteredSupplier) => void;
   lastRegistrationNotice: string | null;
   setLastRegistrationNotice: (notice: string | null) => void;
-  login: (username: string, password?: string) => boolean;
+  login: (username: string, password?: string, loginRole?: "supplier" | "rainco") => boolean;
   logout: () => void;
   registerSupplier: (data: Partial<RegisteredSupplier>) => void;
   // Approval Management

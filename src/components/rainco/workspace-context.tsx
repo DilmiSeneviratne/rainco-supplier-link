@@ -535,9 +535,14 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       (p) => p.processType === "Supplier Registration" && p.supplierName === supplier.name,
     ) || approvalProcesses[0];
 
-  const login = () => {
+  const login = (username: string, _password?: string, loginRole?: "supplier" | "rainco") => {
+    const trimmed = username.trim().toLowerCase();
+    const matchedRaincoUser = systemUsers.find(
+      (u) => u.username.toLowerCase() === trimmed || u.email.toLowerCase() === trimmed,
+    );
+    const resolvedRole = loginRole ?? (matchedRaincoUser ? "rainco" : "supplier");
     setIsLoggedIn(true);
-    setRole("supplier");
+    setRole(resolvedRole);
     return true;
   };
 

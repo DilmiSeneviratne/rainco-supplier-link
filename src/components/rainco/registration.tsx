@@ -4,11 +4,9 @@ import { z } from "zod";
 import {
   ArrowRight,
   CheckCircle2,
-  LockKeyhole,
   MapPin,
   Paperclip,
   Plus,
-  Save,
   Trash2,
   Users,
   X,
@@ -166,19 +164,7 @@ export function Registration() {
 
   return (
     <>
-      <RegistrationBanner
-        submitted={submitted}
-        uploaded={uploaded}
-        totalRequired={requiredDocs.length}
-      />
-
-      <div className="invitation-note">
-        <CheckCircle2 size={13} /> Secure email invitation verified · Complete company profile,
-        contacts, and attachments{" "}
-        <span className="ml-auto">
-          Required fields <span className="text-primary">*</span>
-        </span>
-      </div>
+      <RegistrationBanner />
 
       <RegistrationHeaderForm
         header={header}
@@ -397,19 +383,8 @@ export function Registration() {
         </div>
       )}
 
-      <div className="action-footer">
-        <small>
-          <LockKeyhole size={12} /> Email invitation link · Submitting redirects to login page
-        </small>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setMessage("Draft retained for this preview session only.")}
-          >
-            <Save />
-            Save draft
-          </Button>
+      <div className="action-footer justify-end">
+        <div className="flex gap-2 ml-auto">
           <Button size="sm" onClick={submit} disabled={submitted}>
             {submitted ? <CheckCircle2 /> : <ArrowRight />}
             {submitted ? "Redirecting to login..." : "Submit registration"}

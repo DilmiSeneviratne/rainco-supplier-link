@@ -1,9 +1,11 @@
 {
   "include": [
+    "src/**/*.js",
+    "src/**/*.jsx",
     "src/**/*.ts",
     "src/**/*.tsx",
-    "vite.config.ts",
-    "vitest.config.ts",
+    "vite.config.js",
+    "vitest.config.js",
     "eslint.config.js"
   ],
   "compilerOptions": {
@@ -12,6 +14,7 @@
     "module": "ESNext",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["vite/client", "vitest/globals"],
+    "allowJs": true,
 
     "moduleResolution": "Bundler",
     "allowImportingTsExtensions": true,

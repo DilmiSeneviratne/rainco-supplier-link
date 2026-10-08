@@ -15,7 +15,7 @@ export function RaincoLogo({ className = "h-8 w-auto" }: { className?: string })
 }
 
 export function AccessNotice({ audience }: { audience: "supplier" | "rainco" }) {
-  const { setRole } = useWorkspace();
+  const { setRole, isLoggedIn, logout } = useWorkspace();
   return (
     <Paper
       elevation={1}
@@ -29,11 +29,25 @@ export function AccessNotice({ audience }: { audience: "supplier" | "rainco" }) 
       <Typography variant="body2" color="text.secondary">
         This view is reserved for {audience === "supplier" ? "suppliers" : "Rainco users"}.
       </Typography>
-      <Button onClick={() => setRole(audience)}>
-        Preview as {audience === "supplier" ? "a supplier" : "a Rainco user"}
-      </Button>
+      {!isLoggedIn ? (
+        <Button onClick={() => setRole(audience)}>
+          Preview as {audience === "supplier" ? "a supplier" : "a Rainco user"}
+        </Button>
+      ) : (
+        <Button
+          variant="outline"
+          onClick={() => {
+            logout();
+            window.location.href = "/login";
+          }}
+        >
+          Sign in as {audience === "supplier" ? "a Supplier" : "a Rainco User"}
+        </Button>
+      )}
       <Typography variant="caption" color="text.secondary">
-        Audience simulation only; no secure sign-in is connected.
+        {isLoggedIn
+          ? `Access disabled while logged in as ${audience === "supplier" ? "a Rainco user" : "a supplier"}.`
+          : "Audience simulation only; sign in to lock role permissions."}
       </Typography>
     </Paper>
   );

@@ -135,27 +135,26 @@ export function WorkspaceTopBar({
               display: { xs: "none", sm: "inline-flex" },
             }}
           />
-          {role === "supplier" &&
-            (isLoggedIn ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  logout();
-                  router.navigate({ to: "/login" });
-                }}
-              >
-                <LogOut size={13} />
-                <span>Logout</span>
-              </Button>
-            ) : (
-              <Button asChild variant="outline" size="sm">
-                <Link to="/login">
-                  <LogIn size={13} />
-                  <span>Login</span>
-                </Link>
-              </Button>
-            ))}
+          {isLoggedIn ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                logout();
+                router.navigate({ to: "/login" });
+              }}
+            >
+              <LogOut size={13} />
+              <span>Logout</span>
+            </Button>
+          ) : (
+            <Button asChild variant="outline" size="sm">
+              <Link to="/login">
+                <LogIn size={13} />
+                <span>Login</span>
+              </Link>
+            </Button>
+          )}
         </Stack>
       </Toolbar>
     </AppBar>
