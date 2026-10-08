@@ -20,7 +20,13 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AccessNotice, businessTypes, useWorkspace, type BusinessType } from "./workspace";
+import {
+  AccessNotice,
+  businessTypes,
+  RaincoLogo,
+  useWorkspace,
+  type BusinessType,
+} from "./workspace";
 const contactFields = [
   "First name",
   "Last name",
@@ -194,13 +200,13 @@ export function Registration() {
     <>
       <div className="registration-banner">
         <div>
+          <div className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white shadow-sm mb-2.5">
+            <RaincoLogo className="h-6 w-auto" />
+          </div>
           <div className="banner-eyebrow">
             <Mail size={13} /> EMAIL INVITATION LINK <span> / </span> SUPPLIER ONBOARDING
           </div>
           <h1>Supplier Registration</h1>
-          <p>
-            {header.Name || "New Supplier"} · {type} business onboarding form
-          </p>
           <div className="mt-2.5 text-xs opacity-90 flex items-center gap-2">
             <span>Direct link from invitation email</span>
             <span>·</span>
@@ -228,7 +234,6 @@ export function Registration() {
       <section className="form-section">
         <div className="section-heading">
           <h2>Registration Header</h2>
-          <span>Company & account information</span>
         </div>
         <div className="field-grid">
           {Object.entries(header).map(([key, value]) => (
@@ -320,7 +325,6 @@ export function Registration() {
               <div className="table-toolbar">
                 <div>
                   <strong>Contact persons</strong>
-                  <small>{contacts.length} contacts associated with this supplier</small>
                 </div>
                 <Button
                   size="sm"
@@ -405,9 +409,6 @@ export function Registration() {
               <div className="table-toolbar">
                 <div>
                   <strong>Required documents</strong>
-                  <small>
-                    {type} · {uploaded} of {requiredDocs.length} attached
-                  </small>
                 </div>
                 <span className="text-[10px] text-muted-foreground">PDF, JPG, PNG · Max 10 MB</span>
               </div>

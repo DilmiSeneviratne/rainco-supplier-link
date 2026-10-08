@@ -63,32 +63,32 @@
 
 :root {
   --radius: 0.5rem;
-  --background: oklch(0.963 0.008 255);
-  --foreground: oklch(0.208 0.042 265.755);
-  --card: oklch(1 0 0 / 76%);
+  --background: oklch(0.975 0.004 25);
+  --foreground: oklch(0.19 0.02 25);
+  --card: oklch(1 0 0 / 88%);
   --card-foreground: var(--foreground);
   --popover: oklch(1 0 0);
   --popover-foreground: var(--foreground);
-  --primary: oklch(0.623 0.214 259.815);
+  --primary: oklch(0.55 0.235 27.5);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.946 0.025 255);
-  --secondary-foreground: oklch(0.5 0.17 259);
-  --muted: oklch(0.948 0.01 255);
-  --muted-foreground: oklch(0.52 0.03 255);
-  --accent: oklch(0.95 0.022 255);
+  --secondary: oklch(0.955 0.022 25);
+  --secondary-foreground: oklch(0.46 0.21 27.5);
+  --muted: oklch(0.955 0.008 25);
+  --muted-foreground: oklch(0.48 0.02 25);
+  --accent: oklch(0.952 0.02 25);
   --accent-foreground: var(--foreground);
-  --cyan: oklch(0.715 0.143 215.221);
-  --destructive: oklch(0.577 0.245 27.325);
+  --cyan: oklch(0.62 0.21 32);
+  --destructive: oklch(0.53 0.24 27);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.886 0.017 254);
-  --input: oklch(0.867 0.018 255);
+  --border: oklch(0.895 0.012 25);
+  --input: oklch(0.875 0.015 25);
   --ring: var(--primary);
   --success: oklch(0.53 0.12 165);
   --success-surface: oklch(0.955 0.032 165);
   --warning: oklch(0.59 0.13 70);
   --warning-surface: oklch(0.966 0.038 85);
-  --glass: oklch(1 0 0 / 60%);
-  --hero: linear-gradient(110deg, var(--primary), oklch(0.64 0.17 252) 52%, var(--cyan));
+  --glass: oklch(1 0 0 / 82%);
+  --hero: linear-gradient(110deg, oklch(0.46 0.21 27.5), var(--primary) 54%, oklch(0.6 0.22 31));
   --hero-lines: repeating-linear-gradient(
     115deg,
     transparent 0,
@@ -96,8 +96,8 @@
     oklch(1 0 0 / 7%) 22px,
     oklch(1 0 0 / 7%) 23px
   );
-  --logo-gradient: linear-gradient(135deg, var(--primary), var(--cyan));
-  --subtle-shadow: 0 2px 4px oklch(0.2 0.02 255 / 3%);
+  --logo-gradient: linear-gradient(135deg, var(--primary), oklch(0.47 0.21 27));
+  --subtle-shadow: 0 2px 4px oklch(0.2 0.02 25 / 4%);
   --font-body: "Inter", sans-serif;
   --font-heading: "Space Grotesk", sans-serif;
 }
@@ -137,7 +137,7 @@
   min-height: 100vh;
 }
 .sidebar {
-  width: 250px;
+  width: 256px;
   flex-shrink: 0;
   background: var(--glass);
   border-right: 1px solid var(--border);
@@ -146,14 +146,16 @@
   position: sticky;
   top: 0;
   height: 100vh;
+  overflow: hidden;
   backdrop-filter: blur(20px);
 }
 .brand {
-  height: 84px;
+  height: 72px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 11px;
-  padding: 0 24px;
+  padding: 0 20px;
   border-bottom: 1px solid var(--border);
   text-decoration: none;
   color: var(--foreground);
@@ -183,22 +185,25 @@
   margin-top: 5px;
 }
 .sidebar-nav {
-  padding: 28px 14px;
+  padding: 16px 12px;
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .nav-caption {
   font-size: 10px;
   color: var(--muted-foreground);
-  margin: 0 12px 14px;
+  margin: 0 12px 10px;
   font-weight: 600;
 }
 .module-button {
   width: 100%;
   justify-content: flex-start;
-  padding: 12px;
-  height: 44px;
+  padding: 10px 12px;
+  height: 40px;
   color: var(--muted-foreground);
-  margin: 4px 0;
+  margin: 2px 0;
 }
 .module-button[data-active="true"] {
   color: var(--foreground);
@@ -208,17 +213,17 @@
   background: var(--muted);
 }
 .subnav {
-  margin: 4px 0 20px;
+  margin: 4px 0 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 .navigation-button {
   width: 100%;
   justify-content: flex-start;
   font-size: 12px;
   color: var(--muted-foreground);
-  height: 40px;
+  height: 34px;
   padding: 0 12px;
 }
 .navigation-button[data-active="true"] {
@@ -230,11 +235,14 @@
   background: var(--accent);
 }
 .sidebar-bottom {
-  padding: 14px;
+  flex-shrink: 0;
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--glass);
 }
 .integration {
   background: linear-gradient(120deg, var(--secondary), var(--muted));
-  padding: 14px;
+  padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 11px;
@@ -246,15 +254,15 @@
   display: block;
   font-size: 10px;
   color: var(--muted-foreground);
-  margin-top: 6px;
+  margin-top: 4px;
 }
 .integration-line {
   display: flex;
   gap: 7px;
   color: var(--muted-foreground);
   border-top: 1px solid var(--border);
-  margin-top: 12px;
-  padding-top: 10px;
+  margin-top: 8px;
+  padding-top: 8px;
   font-size: 10px;
 }
 .status-dot {
@@ -268,9 +276,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 16px;
-  padding: 12px 3px 0;
-  border-top: 1px solid var(--border);
+  padding: 2px 3px 0;
 }
 .avatar {
   width: 34px;

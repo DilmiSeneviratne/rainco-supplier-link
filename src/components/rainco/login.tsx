@@ -1,24 +1,14 @@
 import { useState } from "react";
 import { Link, useRouter } from "@tanstack/react-router";
-import {
-  ArrowRight,
-  CheckCircle2,
-  Eye,
-  EyeOff,
-  Lock,
-  Mail,
-  ShieldCheck,
-  Umbrella,
-  User,
-} from "lucide-react";
+import { ArrowRight, CheckCircle2, Eye, EyeOff, Lock, Mail, ShieldCheck, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useWorkspace } from "./workspace";
+import { RaincoLogo, useWorkspace } from "./workspace";
 
 export function Login() {
   const { supplier, login, lastRegistrationNotice, setLastRegistrationNotice } = useWorkspace();
   const router = useRouter();
 
-  const [username, setUsername] = useState(supplier.username || "northwind_ops");
+  const [username, setUsername] = useState(supplier.username || "leabon_ops");
   const [password, setPassword] = useState(supplier.password || "password123");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -49,7 +39,7 @@ export function Login() {
   };
 
   const handlePrefill = () => {
-    setUsername(supplier.username || "northwind_ops");
+    setUsername(supplier.username || "leabon_ops");
     setPassword(supplier.password || "password123");
     setError("");
   };
@@ -58,15 +48,12 @@ export function Login() {
     <div className="max-w-md mx-auto py-8">
       {/* Brand header */}
       <div className="text-center mb-6">
-        <div className="mx-auto w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-cyan-500 grid place-items-center text-white shadow-sm mb-3">
-          <Umbrella size={24} />
+        <div className="mx-auto inline-flex items-center justify-center px-5 py-3 rounded-xl bg-white border border-border shadow-sm mb-3">
+          <RaincoLogo className="h-10 w-auto" />
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           Supplier Portal Sign-In
         </h1>
-        <p className="text-xs text-muted-foreground mt-1.5">
-          Access your Rainco purchase quotations, ratings, and compliance records
-        </p>
       </div>
 
       {/* Registration notice banner if redirected from registration */}

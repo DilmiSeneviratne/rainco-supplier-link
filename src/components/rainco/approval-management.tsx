@@ -18,7 +18,14 @@ import {
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AccessNotice, PageHeading, useWorkspace } from "./workspace";
+import {
+  AccessNotice,
+  PageHeading,
+  useWorkspace,
+  type ApprovalStage,
+  type ApprovalTemplate,
+  type AuthorizerRow,
+} from "./workspace";
 import { Field } from "./registration";
 
 const availableDepartments = [
@@ -79,11 +86,7 @@ export function ApprovalStagesPage() {
 
   return (
     <>
-      <PageHeading
-        eyebrow="RAINCO PROCUREMENT"
-        title="Approval Stages"
-        description="Configure stage names, required approval thresholds, and assign authorizers with departments."
-      />
+      <PageHeading eyebrow="RAINCO PROCUREMENT" title="Approval Stages" />
       <ApprovalStagesTab />
     </>
   );
@@ -95,11 +98,7 @@ export function ApprovalTemplatePage() {
 
   return (
     <>
-      <PageHeading
-        eyebrow="RAINCO PROCUREMENT"
-        title="Approval Template"
-        description="Define approval templates with active status, authorized sections, and sequential stages."
-      />
+      <PageHeading eyebrow="RAINCO PROCUREMENT" title="Approval Template" />
       <ApprovalTemplateTab />
     </>
   );
@@ -111,11 +110,7 @@ export function SupplierApprovalQueuePage() {
 
   return (
     <>
-      <PageHeading
-        eyebrow="RAINCO PROCUREMENT"
-        title="Supplier Approval Queue"
-        description="Monitor registered suppliers progressing through multi-stage approval workflows and execute sign-offs."
-      />
+      <PageHeading eyebrow="RAINCO PROCUREMENT" title="Approval Queue" />
       <SupplierApprovalQueueTab />
     </>
   );
@@ -132,29 +127,44 @@ const defaultAuthorizersList = [
   { name: "Chaminda Bandara", department: "Legal & Compliance", role: "Compliance Officer" },
 ];
 
+function getNextStageId(stages: ApprovalStage[]): string {
+  const maxNum = stages.reduce((max, s) => {
+    const match = s.id.match(/\d+/);
+    return Math.max(max, match ? parseInt(match[0], 10) : 0);
+  }, 0);
+  return `STAGE-${maxNum + 1}`;
+}
+
+function createBlankStage(nextId: string): ApprovalStage {
+  const firstAuth = defaultAuthorizersList[0] ?? {
+    name: "Sunil Jayawardena",
+    department: "Procurement",
+    role: "Category Lead",
+  };
+  return {
+    id: nextId,
+    name: "",
+    description: "",
+    approvalsRequired: 1,
+    rejectionsRequired: 1,
+    isActive: true,
+    authorizers: [
+      {
+        id: "AUTH-1",
+        name: firstAuth.name,
+        department: firstAuth.department,
+        role: firstAuth.role,
+      },
+    ],
+  };
+}
+
 /** 1. APPROVAL STAGES TAB (Simple UI) **/
 function ApprovalStagesTab() {
-  const { stages, saveStage, deleteStage } = useWorkspace();
-  const [editingStageId, setEditingStageId] = useState<string | null>(stages[0]?.id ?? null);
+  const { stages, saveStage, deleteStage, departments } = useWorkspace();
+  const [editingStageId, setEditingStageId] = useState<string | null>(null);
 
-  const [form, setForm] = useState<ApprovalStage>(
-    stages[0] ?? {
-      id: "STAGE-01",
-      name: "",
-      description: "",
-      approvalsRequired: 1,
-      rejectionsRequired: 1,
-      isActive: true,
-      authorizers: [
-        {
-          id: "AUTH-1",
-          name: defaultAuthorizersList[0].name,
-          department: defaultAuthorizersList[0].department,
-          role: defaultAuthorizersList[0].role,
-        },
-      ],
-    },
-  );
+  const [form, setForm] = useState<ApprovalStage>(() => createBlankStage(getNextStageId(stages)));
   const [notice, setNotice] = useState<string>("");
 
   const handleEdit = (stage: ApprovalStage) => {
@@ -166,33 +176,15 @@ function ApprovalStagesTab() {
     setNotice(`Loaded stage "${stage.name}" for editing.`);
   };
 
-  const handleNew = () => {
-    const newId = `STAGE-${(stages.length + 1).toString().padStart(2, "0")}`;
-    setEditingStageId(newId);
-    setForm({
-      id: newId,
-      name: "",
-      description: "",
-      approvalsRequired: 1,
-      rejectionsRequired: 1,
-      isActive: true,
-      authorizers: [
-        {
-          id: `AUTH-${Date.now().toString().slice(-4)}`,
-          name: defaultAuthorizersList[0].name,
-          department: defaultAuthorizersList[0].department,
-          role: defaultAuthorizersList[0].role,
-        },
-      ],
-    });
-    setNotice("New stage form ready.");
-  };
-
   const handleAddAuthorizerRow = () => {
-    const nextAuth =
-      defaultAuthorizersList.find(
-        (da) => !form.authorizers.some((existing) => existing.name === da.name),
-      ) ?? defaultAuthorizersList[0];
+    const nextAuth = defaultAuthorizersList.find(
+      (da) => !form.authorizers.some((existing) => existing.name === da.name),
+    ) ??
+      defaultAuthorizersList[0] ?? {
+        name: "Sunil Jayawardena",
+        department: "Procurement",
+        role: "Category Lead",
+      };
 
     const newAuth: AuthorizerRow = {
       id: `AUTH-${Date.now().toString().slice(-4)}`,
@@ -255,9 +247,23 @@ function ApprovalStagesTab() {
       return;
     }
 
+    const updatedStages = stages.some((s) => s.id === form.id)
+      ? stages.map((s) => (s.id === form.id ? form : s))
+      : [...stages, form];
+
     saveStage(form);
-    setEditingStageId(form.id);
+    setEditingStageId(null);
+    setForm(createBlankStage(getNextStageId(updatedStages)));
     setNotice(`Approval stage "${form.name}" saved successfully!`);
+  };
+
+  const handleDelete = (stageId: string) => {
+    const remainingStages = stages.filter((s) => s.id !== stageId);
+    deleteStage(stageId);
+    if (editingStageId === stageId) {
+      setEditingStageId(null);
+      setForm(createBlankStage(getNextStageId(remainingStages)));
+    }
   };
 
   return (
@@ -271,15 +277,6 @@ function ApprovalStagesTab() {
                 ? `Edit Approval Stage (${editingStageId})`
                 : "Create Approval Stage"}
             </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Enter stage name, description, approvals/rejections required, and active status.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={handleNew} className="text-xs h-8 gap-1">
-              <Plus size={13} />
-              New Stage
-            </Button>
           </div>
         </div>
 
@@ -361,9 +358,6 @@ function ApprovalStagesTab() {
               <h3 className="text-xs font-semibold text-foreground">
                 Authorizers & Departments Grid
               </h3>
-              <p className="text-[11px] text-muted-foreground">
-                Select authorizers from dropdown to add to this stage
-              </p>
             </div>
             <Button
               size="sm"
@@ -413,11 +407,19 @@ function ApprovalStagesTab() {
                         onChange={(e) => handleDepartmentChange(auth.id, e.target.value)}
                         className="grid-input"
                       >
-                        {availableDepartments.map((dept) => (
+                        {(departments.length > 0
+                          ? departments.map((d) => d.name)
+                          : availableDepartments
+                        ).map((dept) => (
                           <option key={dept} value={dept}>
                             {dept}
                           </option>
                         ))}
+                        {!departments.some((d) => d.name === auth.department) &&
+                          !availableDepartments.includes(auth.department) &&
+                          auth.department && (
+                            <option value={auth.department}>{auth.department}</option>
+                          )}
                       </select>
                     </td>
                     <td className="text-center">
@@ -457,9 +459,6 @@ function ApprovalStagesTab() {
         <div className="flex items-center justify-between pb-3 border-b border-border">
           <div>
             <h2 className="text-sm font-semibold text-foreground">All Approval Stages</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              All configured stages in the system. Click Edit to load and update above.
-            </p>
           </div>
           <span className="text-xs font-mono text-muted-foreground">
             Total Stages: {stages.length}
@@ -519,7 +518,7 @@ function ApprovalStagesTab() {
                       </Button>
                       <button
                         type="button"
-                        onClick={() => deleteStage(stg.id)}
+                        onClick={() => handleDelete(stg.id)}
                         className="p-1 hover:text-destructive text-muted-foreground transition-colors"
                         title="Delete stage"
                       >
@@ -545,59 +544,38 @@ function ApprovalStagesTab() {
 }
 
 const authorizedAreasList = [
-  {
-    id: "AREA-REG",
-    name: "Supplier Registration",
-    description:
-      "Supplier onboarding applications, corporate details, contact persons, and mandatory documents",
-  },
-  {
-    id: "AREA-EVAL",
-    name: "Supplier Evaluation",
-    description:
-      "Supplier performance evaluations, scoring criteria, quality benchmarks, and ratings",
-  },
-  {
-    id: "AREA-CHECK",
-    name: "Supplier Checklist",
-    description: "Document checklist compliance, statutory certifications, and business licenses",
-  },
-  {
-    id: "AREA-QUOT",
-    name: "Purchase Quotations",
-    description:
-      "Quotation requests, pricing submissions, delivery lead times, and commercial bids",
-  },
-  {
-    id: "AREA-SAP",
-    name: "Vendor Master (SAP BP)",
-    description: "SAP Business One vendor master activation and business partner code integration",
-  },
-  {
-    id: "AREA-FIN",
-    name: "Commercial & Payment Terms",
-    description:
-      "Credit period, settlement currency, banking confirmations, and payment authorization",
-  },
+  { id: "AREA-REG", name: "Supplier Registration" },
+  { id: "AREA-RAT", name: "Ratings" },
+  { id: "AREA-EVAL", name: "Supplier Evaluation" },
 ];
+
+function getNextTemplateId(templates: ApprovalTemplate[]): string {
+  const maxNum = templates.reduce((max, t) => {
+    const match = t.id.match(/\d+/);
+    return Math.max(max, match ? parseInt(match[0], 10) : 0);
+  }, 0);
+  return `TMPL-${maxNum + 1}`;
+}
+
+function createBlankTemplate(nextId: string): ApprovalTemplate {
+  return {
+    id: nextId,
+    name: "",
+    description: "",
+    isActive: true,
+    authorizedSections: [],
+    stageIds: [],
+  };
+}
 
 /** 2. APPROVAL TEMPLATE TAB (Simple UI) **/
 function ApprovalTemplateTab() {
   const { templates, stages, saveTemplate } = useWorkspace();
-  const [editingTemplateId, setEditingTemplateId] = useState<string | null>(
-    templates[0]?.id ?? null,
-  );
+  const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
   const [childTab, setChildTab] = useState<"areas" | "stages">("areas");
 
-  const [form, setForm] = useState<ApprovalTemplate>(
-    templates[0] ?? {
-      id: "TMPL-1",
-      name: "",
-      description: "",
-      isActive: true,
-      authorizedSections: ["Supplier Registration", "Supplier Evaluation", "Supplier Checklist"],
-      stageIds: stages.map((s) => s.id),
-    },
+  const [form, setForm] = useState<ApprovalTemplate>(() =>
+    createBlankTemplate(getNextTemplateId(templates)),
   );
   const [notice, setNotice] = useState<string>("");
 
@@ -611,20 +589,6 @@ function ApprovalTemplateTab() {
           : ["Supplier Registration", "Supplier Evaluation"],
     });
     setNotice(`Loaded template "${tmpl.name}" for editing.`);
-  };
-
-  const handleNew = () => {
-    const newId = `TMPL-${(templates.length + 1).toString().padStart(2, "0")}`;
-    setEditingTemplateId(newId);
-    setForm({
-      id: newId,
-      name: "",
-      description: "",
-      isActive: true,
-      authorizedSections: ["Supplier Registration", "Supplier Evaluation"],
-      stageIds: stages.slice(0, 2).map((s) => s.id),
-    });
-    setNotice("New template form ready.");
   };
 
   const handleToggleArea = (areaName: string) => {
@@ -659,8 +623,14 @@ function ApprovalTemplateTab() {
       setNotice("Please select at least one stage in the Stages tab.");
       return;
     }
+
+    const updatedTemplates = templates.some((t) => t.id === form.id)
+      ? templates.map((t) => (t.id === form.id ? form : t))
+      : [...templates, form];
+
     saveTemplate(form);
-    setEditingTemplateId(form.id);
+    setEditingTemplateId(null);
+    setForm(createBlankTemplate(getNextTemplateId(updatedTemplates)));
     setNotice(`Approval template "${form.name}" saved successfully!`);
   };
 
@@ -675,16 +645,6 @@ function ApprovalTemplateTab() {
                 ? `Edit Approval Template (${editingTemplateId})`
                 : "Create Approval Template"}
             </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Enter name and description in header, select authorized areas and stages in child
-              tabs.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={handleNew} className="text-xs h-8 gap-1">
-              <Plus size={13} />
-              New Template
-            </Button>
           </div>
         </div>
 
@@ -762,10 +722,7 @@ function ApprovalTemplateTab() {
           {/* Child Tab 1: Authorized Areas to Approve */}
           {childTab === "areas" && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs text-muted-foreground pb-2">
-                <span>
-                  Select system areas that this approval template is authorized to approve:
-                </span>
+              <div className="flex items-center justify-end text-xs text-muted-foreground pb-2">
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -795,30 +752,21 @@ function ApprovalTemplateTab() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 py-1">
                 {authorizedAreasList.map((area) => {
                   const isChecked = form.authorizedSections?.includes(area.name) ?? false;
                   return (
                     <label
                       key={area.id}
-                      className={`p-3.5 rounded-lg border text-xs flex items-start gap-3 cursor-pointer transition-colors ${
-                        isChecked
-                          ? "border-primary/50 bg-primary/5 text-foreground"
-                          : "border-border bg-popover/80 hover:bg-muted/40 text-muted-foreground"
-                      }`}
+                      className="flex items-center gap-2.5 text-xs text-foreground cursor-pointer select-none py-1"
                     >
                       <input
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => handleToggleArea(area.name)}
-                        className="mt-0.5 w-4 h-4 rounded text-primary focus:ring-primary shrink-0"
+                        className="w-4 h-4 rounded text-primary focus:ring-primary shrink-0"
                       />
-                      <div>
-                        <strong className="block font-medium text-foreground">{area.name}</strong>
-                        <span className="text-[11px] text-muted-foreground block mt-0.5">
-                          {area.description}
-                        </span>
-                      </div>
+                      <span className="font-medium">{area.name}</span>
                     </label>
                   );
                 })}
@@ -829,8 +777,7 @@ function ApprovalTemplateTab() {
           {/* Child Tab 2: Stages in Grid */}
           {childTab === "stages" && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs text-muted-foreground pb-2">
-                <span>Select stages to include in this approval template:</span>
+              <div className="flex items-center justify-end text-xs text-muted-foreground pb-2">
                 <span className="text-[11px]">
                   {form.stageIds.length} of {stages.length} stages included
                 </span>
@@ -918,9 +865,6 @@ function ApprovalTemplateTab() {
         <div className="flex items-center justify-between pb-3 border-b border-border">
           <div>
             <h2 className="text-sm font-semibold text-foreground">All Approval Templates</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              All approval templates configured in the system. Click Edit to load and update above.
-            </p>
           </div>
           <span className="text-xs font-mono text-muted-foreground">
             Total Templates: {templates.length}
@@ -998,16 +942,31 @@ function ApprovalTemplateTab() {
 
 /** 3. SUPPLIER APPROVAL QUEUE TAB **/
 function SupplierApprovalQueueTab() {
-  const { approvalProcesses, approveStage, rejectStage } = useWorkspace();
+  const {
+    approvalProcesses,
+    approveStage,
+    rejectStage,
+    suppliersList,
+    documents,
+    ratingMasters,
+    criterias,
+    evaluations,
+  } = useWorkspace();
+  const [filterType, setFilterType] = useState<
+    "Supplier Registration" | "Ratings" | "Supplier Evaluation"
+  >("Supplier Registration");
   const [selectedProcessId, setSelectedProcessId] = useState<string>(
     approvalProcesses[0]?.id ?? "",
   );
   const [authorizerName, setAuthorizerName] = useState("Sunil Jayawardena");
   const [remarkText, setRemarkText] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [showDetails, setShowDetails] = useState(true);
+
+  const filteredProcesses = approvalProcesses.filter((p) => p.processType === filterType);
 
   const activeProcess =
-    approvalProcesses.find((p) => p.id === selectedProcessId) || approvalProcesses[0];
+    filteredProcesses.find((p) => p.id === selectedProcessId) || filteredProcesses[0];
 
   const handleApprove = (stageId: string) => {
     if (!activeProcess) return;
@@ -1036,34 +995,60 @@ function SupplierApprovalQueueTab() {
     setFeedback(`Stage rejected by ${authorizerName}.`);
   };
 
+  const filterTabs: Array<{
+    key: "Supplier Registration" | "Ratings" | "Supplier Evaluation";
+    label: string;
+  }> = [
+    { key: "Supplier Registration", label: "Supplier Registration" },
+    { key: "Ratings", label: "Ratings" },
+    { key: "Supplier Evaluation", label: "Supplier Evaluation" },
+  ];
+
   return (
     <div className="space-y-6">
-      {/* Header Overview */}
-      <div className="rounded-lg border border-border bg-card p-5">
+      {/* Header Overview & Category Filter Tabs */}
+      <div className="rounded-lg border border-border bg-card p-5 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold text-foreground">
-              Supplier Onboarding Approval Queue
+              Multi-Stage Approval Queue (Supplier Registration, Ratings &amp; Evaluation)
             </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Every supplier registered to the system progresses through the multi-stage approval
-              workflow defined in the active template.
-            </p>
           </div>
           <span className="text-xs text-muted-foreground font-mono">
-            Active Processes: {approvalProcesses.length}
+            Active Processes: {filteredProcesses.length}
           </span>
+        </div>
+
+        <div className="child-tabs">
+          {filterTabs.map((tab) => {
+            const count = approvalProcesses.filter((p) => p.processType === tab.key).length;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                className="tab-button"
+                data-active={filterType === tab.key}
+                onClick={() => {
+                  setFilterType(tab.key);
+                  setFeedback("");
+                }}
+              >
+                <span>{tab.label}</span>
+                <span className="tab-count ml-1.5">{count}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Supplier Queue List (4 cols) */}
+        {/* Left: Approval Queue List (4 cols) */}
         <div className="lg:col-span-4 space-y-3">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
-            Registered Suppliers in Review
+            Items Pending / In Review
           </h3>
 
-          {approvalProcesses.map((proc) => {
+          {filteredProcesses.map((proc) => {
             const isSelected = proc.id === activeProcess?.id;
             return (
               <button
@@ -1079,8 +1064,11 @@ function SupplierApprovalQueueTab() {
                     : "border-border bg-card hover:bg-muted/40 text-muted-foreground"
                 }`}
               >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-mono text-[10px] text-primary">{proc.id}</span>
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono text-[10px] text-primary">{proc.id}</span>
+                    <span className="badge text-[9px]">{proc.processType}</span>
+                  </div>
                   <span
                     className={`badge text-[10px] ${
                       proc.overallStatus === "Approved"
@@ -1097,7 +1085,7 @@ function SupplierApprovalQueueTab() {
                   {proc.supplierName}
                 </strong>
                 <span className="text-[11px] text-muted-foreground block mt-0.5">
-                  Template: {proc.templateName}
+                  {proc.supplierEmail}
                 </span>
 
                 <div className="mt-3 flex items-center justify-between text-[11px] pt-2 border-t border-border">
@@ -1110,19 +1098,31 @@ function SupplierApprovalQueueTab() {
               </button>
             );
           })}
+
+          {filteredProcesses.length === 0 && (
+            <div className="p-6 text-center text-xs text-muted-foreground border border-dashed rounded-lg">
+              No approval processes found for this category.
+            </div>
+          )}
         </div>
 
-        {/* Right: Selected Supplier Stage-by-Stage Inspector (8 cols) */}
+        {/* Right: Selected Process Stage-by-Stage Inspector (8 cols) */}
         {activeProcess ? (
           <div className="lg:col-span-8 space-y-5">
             <div className="rounded-lg border border-border bg-card p-6 space-y-5">
               <div className="flex items-start justify-between pb-4 border-b border-border">
                 <div>
-                  <span className="text-xs font-mono text-primary block">{activeProcess.id}</span>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-mono text-primary">{activeProcess.id}</span>
+                    <span className="badge text-[10px]">{activeProcess.processType}</span>
+                  </div>
                   <h2 className="text-base font-bold text-foreground">
                     {activeProcess.supplierName}
                   </h2>
                   <p className="text-xs text-muted-foreground mt-0.5">
+                    {activeProcess.supplierEmail}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-1">
                     Workflow Template:{" "}
                     <span className="text-foreground">{activeProcess.templateName}</span>
                   </p>
@@ -1140,7 +1140,7 @@ function SupplierApprovalQueueTab() {
                     {activeProcess.overallStatus}
                   </span>
                   <small className="block text-[10px] text-muted-foreground mt-1">
-                    Registered: {activeProcess.registrationDate}
+                    Submitted: {activeProcess.registrationDate}
                   </small>
                 </div>
               </div>
@@ -1151,6 +1151,415 @@ function SupplierApprovalQueueTab() {
                 </div>
               )}
 
+              {/* Submission Details to Review Before Approving */}
+              <div className="rounded-lg border border-border bg-muted/20 overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 bg-muted/50 border-b border-border">
+                  <div className="flex items-center gap-2">
+                    <Layers size={14} className="text-primary" />
+                    <strong className="text-xs font-semibold text-foreground">
+                      {activeProcess.processType} Details to Review
+                    </strong>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowDetails((prev) => !prev)}
+                    className="h-6 text-[11px] px-2.5"
+                  >
+                    {showDetails ? "Hide Details" : "View Details"}
+                  </Button>
+                </div>
+
+                {showDetails && (
+                  <div className="p-4 space-y-4 text-xs">
+                    {/* CASE 1: SUPPLIER REGISTRATION DETAILS */}
+                    {activeProcess.processType === "Supplier Registration" &&
+                      (() => {
+                        const matchedSupplier =
+                          suppliersList.find(
+                            (s) =>
+                              s.registrationNo === activeProcess.targetId ||
+                              s.name === activeProcess.supplierName,
+                          ) ?? suppliersList[0];
+
+                        if (!matchedSupplier) {
+                          return (
+                            <p className="text-muted-foreground">
+                              No registration details found for this supplier.
+                            </p>
+                          );
+                        }
+
+                        const requiredDocs = documents[matchedSupplier.businessType] ?? [];
+
+                        return (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-3.5 rounded border border-border bg-card">
+                              <div>
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                                  Supplier Name
+                                </span>
+                                <strong className="text-foreground font-medium">
+                                  {matchedSupplier.name}
+                                </strong>
+                              </div>
+                              <div>
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                                  SAP BP ID / Reg. No
+                                </span>
+                                <span className="font-mono text-primary font-medium">
+                                  {matchedSupplier.sapPartnerId} · {matchedSupplier.registrationNo}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                                  Business Type &amp; Currency
+                                </span>
+                                <span className="text-foreground">
+                                  {matchedSupplier.businessType} ({matchedSupplier.currency})
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                                  Email Address
+                                </span>
+                                <span className="text-foreground">{matchedSupplier.email}</span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                                  Phone Number
+                                </span>
+                                <span className="font-mono text-foreground">
+                                  {matchedSupplier.phone}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                                  Contacts &amp; Portal Username
+                                </span>
+                                <span className="font-mono text-foreground">
+                                  {matchedSupplier.contactsCount} Contacts · @
+                                  {matchedSupplier.username}
+                                </span>
+                              </div>
+                              {matchedSupplier.remark && (
+                                <div className="sm:col-span-2 md:col-span-3 pt-2 border-t border-border">
+                                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                                    Registration Remarks
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    {matchedSupplier.remark}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Attached Checklist Documents */}
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="font-semibold text-foreground">
+                                  Submitted Checklist Documents ({matchedSupplier.documentsAttached}{" "}
+                                  / {matchedSupplier.totalDocumentsRequired})
+                                </span>
+                                <span className="badge text-[10px]">
+                                  {matchedSupplier.businessType} Checklist
+                                </span>
+                              </div>
+                              <div className="overflow-x-auto rounded border border-border bg-card">
+                                <table className="data-table">
+                                  <thead>
+                                    <tr>
+                                      <th className="w-28">Doc Code</th>
+                                      <th>Document Name</th>
+                                      <th className="w-32 text-center">Verification</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {requiredDocs.map((doc) => (
+                                      <tr key={doc.code}>
+                                        <td className="font-mono text-xs text-primary">
+                                          {doc.code}
+                                        </td>
+                                        <td className="font-medium text-foreground">{doc.name}</td>
+                                        <td className="text-center">
+                                          <span className="badge bg-emerald-100 text-emerald-800 text-[10px]">
+                                            Attached
+                                          </span>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                    {/* CASE 2: RATINGS MASTER DETAILS */}
+                    {activeProcess.processType === "Ratings" &&
+                      (() => {
+                        const matchedRating =
+                          ratingMasters.find((r) => r.id === activeProcess.targetId) ??
+                          ratingMasters.find((r) => activeProcess.supplierName.includes(r.code)) ??
+                          ratingMasters[0];
+
+                        if (!matchedRating) {
+                          return (
+                            <p className="text-muted-foreground">
+                              No rating configuration details found.
+                            </p>
+                          );
+                        }
+
+                        const chosenCriterias = criterias.filter((c) =>
+                          (matchedRating.selectedCriteriaIds ?? []).includes(c.id),
+                        );
+                        const totalWeight = Object.values(
+                          matchedRating.subCriteriaWeights ?? {},
+                        ).reduce((sum, w) => sum + (Number(w) || 0), 0);
+
+                        return (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 p-3.5 rounded border border-border bg-card">
+                              <div>
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                                  Rate Code
+                                </span>
+                                <strong className="font-mono text-primary">
+                                  {matchedRating.code}
+                                </strong>
+                              </div>
+                              <div className="sm:col-span-2">
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                                  Rate Name
+                                </span>
+                                <strong className="text-foreground">{matchedRating.name}</strong>
+                              </div>
+                              <div>
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                                  Supplier Type &amp; Weightage
+                                </span>
+                                <span className="font-mono text-foreground">
+                                  {matchedRating.supplierType} · {totalWeight}%
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="space-y-2.5">
+                              <span className="font-semibold text-foreground block">
+                                Configured Criterias, Sub-Criteria Weightages &amp; Condition Marks
+                              </span>
+                              {chosenCriterias.map((main) => (
+                                <div
+                                  key={main.id}
+                                  className="rounded border border-border bg-card overflow-hidden"
+                                >
+                                  <div className="px-3 py-2 bg-muted/40 border-b border-border flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-primary font-semibold">
+                                        {main.code}
+                                      </span>
+                                      <strong className="text-foreground">{main.name}</strong>
+                                      <span className="badge text-[9px]">{main.criteriaType}</span>
+                                    </div>
+                                  </div>
+                                  <div className="overflow-x-auto">
+                                    <table className="data-table">
+                                      <thead>
+                                        <tr>
+                                          <th className="w-24">Sub Code</th>
+                                          <th>Sub Criteria</th>
+                                          <th className="w-24">Data Type</th>
+                                          <th className="w-28 text-right">Weightage</th>
+                                          <th>Configured Conditions &amp; Marks</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {main.subCriterias.map((sub) => {
+                                          const weight =
+                                            matchedRating.subCriteriaWeights?.[sub.id] ?? 0;
+                                          const conds =
+                                            matchedRating.subCriteriaRatings?.[sub.id] ?? [];
+                                          return (
+                                            <tr key={sub.id}>
+                                              <td className="font-mono text-xs text-primary">
+                                                {sub.code}
+                                              </td>
+                                              <td className="font-medium text-foreground">
+                                                {sub.indication}
+                                              </td>
+                                              <td>
+                                                <span className="badge text-[9px]">
+                                                  {sub.criteriaValue}
+                                                </span>
+                                              </td>
+                                              <td className="text-right font-mono font-semibold text-primary">
+                                                {weight}%
+                                              </td>
+                                              <td>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                  {conds.map((c) => (
+                                                    <span
+                                                      key={c.id}
+                                                      className="px-2 py-0.5 rounded border border-border bg-muted/40 font-mono text-[11px]"
+                                                    >
+                                                      {c.condition}:{" "}
+                                                      <strong className="text-primary">
+                                                        {c.marks}m
+                                                      </strong>
+                                                    </span>
+                                                  ))}
+                                                  {conds.length === 0 && (
+                                                    <span className="text-muted-foreground">—</span>
+                                                  )}
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                    {/* CASE 3: SUPPLIER EVALUATION DETAILS */}
+                    {activeProcess.processType === "Supplier Evaluation" &&
+                      (() => {
+                        const matchedEval =
+                          evaluations.find((ev) => ev.id === activeProcess.targetId) ??
+                          evaluations[0];
+
+                        if (!matchedEval) {
+                          return (
+                            <p className="text-muted-foreground">
+                              No supplier evaluation sheet details found.
+                            </p>
+                          );
+                        }
+
+                        return (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 p-3.5 rounded border border-border bg-card">
+                              <div>
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                                  Supplier
+                                </span>
+                                <strong className="text-foreground">
+                                  {matchedEval.supplierName}
+                                </strong>
+                              </div>
+                              <div>
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                                  Selected Rating
+                                </span>
+                                <span className="font-mono text-primary font-semibold">
+                                  {matchedEval.ratingCode}
+                                </span>{" "}
+                                <span className="text-foreground">· {matchedEval.ratingName}</span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                                  Evaluation Period
+                                </span>
+                                <span className="font-mono text-foreground">
+                                  {matchedEval.fromDate} to {matchedEval.toDate}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                                  Total Marks / Score
+                                </span>
+                                <strong className="font-mono text-primary">
+                                  {matchedEval.totalMarks} / {matchedEval.totalScore} (
+                                  {matchedEval.percentage}%)
+                                </strong>
+                              </div>
+                              {matchedEval.remark && (
+                                <div className="sm:col-span-2 md:col-span-4 pt-2 border-t border-border">
+                                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                                    Evaluation Remarks
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    {matchedEval.remark}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            {matchedEval.subCriteriaEntries &&
+                              matchedEval.subCriteriaEntries.length > 0 && (
+                                <div className="overflow-x-auto rounded border border-border bg-card">
+                                  <table className="data-table">
+                                    <thead>
+                                      <tr>
+                                        <th>Main Criteria</th>
+                                        <th>Sub Criteria</th>
+                                        <th>Data Type</th>
+                                        <th>Selected Condition</th>
+                                        <th className="text-right">Score</th>
+                                        <th className="text-right">Marks</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {matchedEval.subCriteriaEntries.map((entry) => (
+                                        <tr key={`${entry.mainId}-${entry.subId}`}>
+                                          <td>
+                                            <span className="font-mono text-primary font-medium">
+                                              {entry.mainCode}
+                                            </span>{" "}
+                                            · {entry.mainName}
+                                          </td>
+                                          <td className="font-medium text-foreground">
+                                            <span className="font-mono text-xs text-primary">
+                                              {entry.subCode}
+                                            </span>{" "}
+                                            · {entry.subIndication}
+                                          </td>
+                                          <td>
+                                            <span className="badge text-[9px]">
+                                              {entry.criteriaValue}
+                                            </span>
+                                          </td>
+                                          <td className="font-mono text-xs">{entry.condition}</td>
+                                          <td className="text-right font-mono tabular-nums">
+                                            {entry.score}
+                                          </td>
+                                          <td className="text-right font-mono tabular-nums font-semibold text-primary">
+                                            {entry.marks}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                    <tfoot>
+                                      <tr className="border-t-2 border-border bg-muted/40 font-semibold">
+                                        <td colSpan={4} className="text-foreground">
+                                          Total Evaluation Marks
+                                        </td>
+                                        <td className="text-right font-mono tabular-nums">
+                                          {matchedEval.totalScore}
+                                        </td>
+                                        <td className="text-right font-mono tabular-nums text-primary font-bold">
+                                          {matchedEval.totalMarks} ({matchedEval.percentage}%)
+                                        </td>
+                                      </tr>
+                                    </tfoot>
+                                  </table>
+                                </div>
+                              )}
+                          </div>
+                        );
+                      })()}
+                  </div>
+                )}
+              </div>
+
               {/* Authorizer Sign-Off Control Bar */}
               <div className="p-4 rounded-lg bg-muted/40 border border-border space-y-3">
                 <div className="flex items-center justify-between">
@@ -1158,9 +1567,6 @@ function SupplierApprovalQueueTab() {
                     <ShieldCheck size={14} className="text-primary" />
                     <span>Authorizer Action Panel</span>
                   </strong>
-                  <span className="text-[11px] text-muted-foreground">
-                    Simulate approval or rejection sign-off
-                  </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -1242,9 +1648,6 @@ function SupplierApprovalQueueTab() {
                                   {stage.stageId}
                                 </span>
                               </div>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                {stage.description}
-                              </p>
                             </div>
                           </div>
 
