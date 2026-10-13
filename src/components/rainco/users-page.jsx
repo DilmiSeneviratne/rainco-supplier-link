@@ -1,8 +1,68 @@
 import { useState } from "react";
-import { Eye, EyeOff, Save, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field } from "./registration";
 import { AccessNotice, PageHeading, useWorkspace } from "./workspace";
+const sapUsersDirectory = [
+    {
+        sapUserCode: "SAP-EMP-001",
+        fullName: "Sunil Jayawardena",
+        email: "sunil.j@rainco.example",
+        department: "Procurement",
+    },
+    {
+        sapUserCode: "SAP-EMP-002",
+        fullName: "Nadeeka Perera",
+        email: "nadeeka.p@rainco.example",
+        department: "Finance & Accounts",
+    },
+    {
+        sapUserCode: "SAP-EMP-003",
+        fullName: "Anura Dissanayake",
+        email: "anura.d@rainco.example",
+        department: "Corporate Governance",
+    },
+    {
+        sapUserCode: "SAP-EMP-004",
+        fullName: "Dilmi Seneviratne",
+        email: "dilmi.s@rainco.example",
+        department: "Procurement",
+    },
+    {
+        sapUserCode: "SAP-EMP-005",
+        fullName: "Kamal Wickramasinghe",
+        email: "kamal.w@rainco.example",
+        department: "Finance & Accounts",
+    },
+    {
+        sapUserCode: "SAP-EMP-006",
+        fullName: "Malik Fernando",
+        email: "malik.f@rainco.example",
+        department: "Procurement",
+    },
+    {
+        sapUserCode: "SAP-EMP-007",
+        fullName: "oshani.k@rainco.example",
+        fullNameDisplay: "Oshani Karunaratne",
+        email: "oshani.k@rainco.example",
+        department: "Quality Assurance",
+    },
+    {
+        sapUserCode: "SAP-EMP-008",
+        fullName: "Roshan Rajapakse",
+        email: "roshan.r@rainco.example",
+        department: "Supply Chain Operations",
+    },
+    {
+        sapUserCode: "SAP-EMP-009",
+        fullName: "Tharindu Bandara",
+        email: "tharindu.b@rainco.example",
+        department: "Legal & Compliance",
+    },
+].map((u) => ({
+    ...u,
+    fullName: u.fullNameDisplay ?? u.fullName,
+}));
 function getNextUserId(users) {
     const maxNum = users.reduce((max, u) => {
         const match = u.id.match(/\d+/);
@@ -11,33 +71,72 @@ function getNextUserId(users) {
     return `USR-${maxNum + 1}`;
 }
 export function UsersPage() {
-    const { role, departments, systemUsers, saveSystemUser, deleteSystemUser } = useWorkspace();
-    const activeDepartments = departments.filter((d) => d.isActive);
+    const { role, employees, systemUsers, saveSystemUser } = useWorkspace();
     const [editingId, setEditingId] = useState(null);
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
-    const [department, setDepartment] = useState(activeDepartments[0]?.name ?? "Procurement");
+    const [department, setDepartment] = useState("");
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isActive, setIsActive] = useState(true);
     const [notice, setNotice] = useState(null);
     if (role !== "rainco")
         return <AccessNotice audience="rainco"/>;
+    const baseEmployees = employees?.length ? employees : sapUsersDirectory;
+    // Merge Employee Master directory with any existing system users so all users appear in the Name selector
+    const allSapOptions = [
+        ...baseEmployees,
+        ...systemUsers
+            .filter((su) => !baseEmployees.some((sap) => sap.fullName === su.fullName))
+            .map((su, idx) => ({
+            sapUserCode: `SAP-EMP-10${idx + 1}`,
+            fullName: su.fullName,
+            email: su.email,
+            department: su.department,
+        })),
+    ];
+    const handleSelectSapUser = (selectedName) => {
+        setFullName(selectedName);
+        const foundSapUser = allSapOptions.find((u) => u.fullName === selectedName);
+        if (foundSapUser) {
+            setEmail(foundSapUser.email);
+            setDepartment(foundSapUser.department);
+        }
+        else {
+            setEmail("");
+            setDepartment("");
+        }
+    };
     const handleEdit = (u) => {
         setEditingId(u.id);
-        setUsername(u.username);
-        setPassword(u.password ?? "");
         setFullName(u.fullName);
         setEmail(u.email);
         setDepartment(u.department);
+        setUsername(u.username);
+        setPassword(u.password ?? "");
+        setConfirmPassword(u.password ?? "");
         setIsActive(u.isActive);
         setNotice(null);
     };
     const handleSave = () => {
-        if (!username.trim() || !password.trim() || !fullName.trim() || !email.trim()) {
+        if (!fullName.trim() ||
+            !email.trim() ||
+            !department.trim() ||
+            !username.trim() ||
+            !password.trim() ||
+            !confirmPassword.trim()) {
             setNotice({
-                text: "Please complete Username, Password, Full Name, and Email.",
+                text: "Please select a Name (to populate Email and Department) and enter Username, Password, and Confirm Password.",
+                isError: true,
+            });
+            return;
+        }
+        if (password !== confirmPassword) {
+            setNotice({
+                text: "Password and Confirm Password do not match.",
                 isError: true,
             });
             return;
@@ -49,32 +148,22 @@ export function UsersPage() {
             password: password.trim(),
             fullName: fullName.trim(),
             email: email.trim(),
-            department,
+            department: department.trim(),
             isActive,
         });
         setEditingId(null);
-        setUsername("");
-        setPassword("");
-        setShowPassword(false);
         setFullName("");
         setEmail("");
-        setDepartment(activeDepartments[0]?.name ?? "Procurement");
+        setDepartment("");
+        setUsername("");
+        setPassword("");
+        setConfirmPassword("");
+        setShowPassword(false);
+        setShowConfirmPassword(false);
         setIsActive(true);
         setNotice({
             text: `User "${fullName.trim()}" saved successfully.`,
         });
-    };
-    const handleDelete = (id) => {
-        deleteSystemUser(id);
-        if (editingId === id) {
-            setEditingId(null);
-            setUsername("");
-            setPassword("");
-            setShowPassword(false);
-            setFullName("");
-            setEmail("");
-            setIsActive(true);
-        }
     };
     return (<div className="space-y-6">
       <PageHeading eyebrow="ADMINISTRATION" title="Users"/>
@@ -91,6 +180,23 @@ export function UsersPage() {
           </div>)}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          <Field label="Name" required>
+            <select value={fullName} onChange={(e) => handleSelectSapUser(e.target.value)}>
+              <option value="">Select User...</option>
+              {allSapOptions.map((sapUser) => (<option key={sapUser.sapUserCode} value={sapUser.fullName}>
+                  {sapUser.fullName}
+                </option>))}
+            </select>
+          </Field>
+
+          <Field label="Email" required>
+            <input type="email" placeholder="Email" value={email} readOnly className="bg-muted/50 cursor-not-allowed"/>
+          </Field>
+
+          <Field label="Department" required>
+            <input type="text" placeholder="Department" value={department} readOnly className="bg-muted/50 cursor-not-allowed"/>
+          </Field>
+
           <Field label="Username" required>
             <input type="text" placeholder="e.g. kamal.w" value={username} onChange={(e) => setUsername(e.target.value)}/>
           </Field>
@@ -104,21 +210,13 @@ export function UsersPage() {
             </div>
           </Field>
 
-          <Field label="Full Name" required>
-            <input type="text" placeholder="e.g. Kamal Wickramasinghe" value={fullName} onChange={(e) => setFullName(e.target.value)}/>
-          </Field>
-
-          <Field label="Email" required>
-            <input type="email" placeholder="e.g. kamal.w@rainco.example" value={email} onChange={(e) => setEmail(e.target.value)}/>
-          </Field>
-
-          <Field label="Department" required>
-            <select value={department} onChange={(e) => setDepartment(e.target.value)}>
-              {departments.map((d) => (<option key={d.id} value={d.name}>
-                  {d.name}
-                </option>))}
-              {!departments.some((d) => d.name === department) && department && (<option value={department}>{department}</option>)}
-            </select>
+          <Field label="Confirm Password" required>
+            <div className="relative">
+              <input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pr-9"/>
+              <button type="button" onClick={() => setShowConfirmPassword((prev) => !prev)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" title={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}>
+                {showConfirmPassword ? <EyeOff size={15}/> : <Eye size={15}/>}
+              </button>
+            </div>
           </Field>
 
           <div className="flex items-center pb-2.5">
@@ -155,7 +253,7 @@ export function UsersPage() {
                 <th>Email</th>
                 <th>Department</th>
                 <th className="w-24 text-center">Status</th>
-                <th className="w-28 text-center">Actions</th>
+                <th className="w-24 text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -173,13 +271,10 @@ export function UsersPage() {
                     </span>
                   </td>
                   <td className="text-center">
-                    <div className="flex items-center justify-center gap-1.5">
+                    <div className="flex items-center justify-center">
                       <Button size="sm" variant="outline" onClick={() => handleEdit(u)} className="h-6 text-[11px] px-2.5">
                         Edit
                       </Button>
-                      <button type="button" onClick={() => handleDelete(u.id)} className="p-1 hover:text-destructive text-muted-foreground transition-colors" title="Delete user">
-                        <Trash2 size={13}/>
-                      </button>
                     </div>
                   </td>
                 </tr>))}

@@ -5,7 +5,7 @@ import { AccessNotice, PageHeading, useWorkspace, } from "./workspace";
 import { Field } from "./registration";
 const authorizedAreasList = [
     { id: "AREA-REG", name: "Supplier Registration" },
-    { id: "AREA-RAT", name: "Ratings" },
+    { id: "AREA-RAT", name: "Conditions" },
     { id: "AREA-EVAL", name: "Supplier Evaluation" },
 ];
 function getNextTemplateId(templates) {

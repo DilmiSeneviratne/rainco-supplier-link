@@ -782,7 +782,7 @@
   inset: 0;
   background: oklch(0.2 0.02 255 / 30%);
   backdrop-filter: blur(4px);
-  z-index: 30;
+  z-index: 1300;
   display: grid;
   place-items: center;
   padding: 24px;

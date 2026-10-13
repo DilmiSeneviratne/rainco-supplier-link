@@ -11,7 +11,7 @@ import { Route as ApprovalStagesRouteImport } from './routes/approval-stages';
 import { Route as ApprovalTemplateRouteImport } from './routes/approval-template';
 import { Route as ChecklistRouteImport } from './routes/checklist';
 import { Route as CriteriasRouteImport } from './routes/criterias';
-import { Route as DepartmentsRouteImport } from './routes/departments';
+import { Route as EmployeesRouteImport } from './routes/employees';
 import { Route as EvaluationRouteImport } from './routes/evaluation';
 import { Route as EvaluationChartRouteImport } from './routes/evaluation-chart';
 import { Route as EvaluationReportRouteImport } from './routes/evaluation-report';
@@ -23,6 +23,7 @@ import { Route as RatingsMasterRouteImport } from './routes/ratings-master';
 import { Route as RegisterRouteImport } from './routes/register';
 import { Route as SupplierTypesRouteImport } from './routes/supplier-types';
 import { Route as SuppliersRouteImport } from './routes/suppliers';
+import { Route as TutorialsRouteImport } from './routes/tutorials';
 import { Route as UserPermissionsRouteImport } from './routes/user-permissions';
 import { Route as UsersRouteImport } from './routes/users';
 const IndexRoute = IndexRouteImport.update({
@@ -55,9 +56,9 @@ const CriteriasRoute = CriteriasRouteImport.update({
     path: '/criterias',
     getParentRoute: () => rootRouteImport,
 });
-const DepartmentsRoute = DepartmentsRouteImport.update({
-    id: '/departments',
-    path: '/departments',
+const EmployeesRoute = EmployeesRouteImport.update({
+    id: '/employees',
+    path: '/employees',
     getParentRoute: () => rootRouteImport,
 });
 const EvaluationRoute = EvaluationRouteImport.update({
@@ -115,6 +116,11 @@ const SuppliersRoute = SuppliersRouteImport.update({
     path: '/suppliers',
     getParentRoute: () => rootRouteImport,
 });
+const TutorialsRoute = TutorialsRouteImport.update({
+    id: '/tutorials',
+    path: '/tutorials',
+    getParentRoute: () => rootRouteImport,
+});
 const UserPermissionsRoute = UserPermissionsRouteImport.update({
     id: '/user-permissions',
     path: '/user-permissions',
@@ -132,7 +138,7 @@ const rootRouteChildren = {
     ApprovalTemplateRoute: ApprovalTemplateRoute,
     ChecklistRoute: ChecklistRoute,
     CriteriasRoute: CriteriasRoute,
-    DepartmentsRoute: DepartmentsRoute,
+    EmployeesRoute: EmployeesRoute,
     EvaluationRoute: EvaluationRoute,
     EvaluationChartRoute: EvaluationChartRoute,
     EvaluationReportRoute: EvaluationReportRoute,
@@ -144,6 +150,7 @@ const rootRouteChildren = {
     RegisterRoute: RegisterRoute,
     SupplierTypesRoute: SupplierTypesRoute,
     SuppliersRoute: SuppliersRoute,
+    TutorialsRoute: TutorialsRoute,
     UserPermissionsRoute: UserPermissionsRoute,
     UsersRoute: UsersRoute,
 };

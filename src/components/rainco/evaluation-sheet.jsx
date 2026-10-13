@@ -14,9 +14,9 @@ function EvaluationHeaderFilters({ suppliersList, ratingMasters, selectedSupplie
           </select>
         </Field>
 
-        <Field label="Rating" required>
+        <Field label="Condition" required>
           <select value={selectedRatingId} onChange={(e) => onRatingChange(e.target.value)}>
-            <option value="">-- Select Rating --</option>
+            <option value="">-- Select Condition --</option>
             {ratingMasters.map((r) => (<option key={r.id} value={r.id}>
                 {r.code} · {r.name} ({r.supplierType})
               </option>))}
@@ -38,10 +38,10 @@ function EvaluationCriteriaTreeCard({ selectedRating, activeMainCriterias, expan
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-xs font-semibold text-foreground">
-            Evaluation Criteria Tree ({selectedRating.code} · {selectedRating.name})
+            Evaluation Tutorials Tree ({selectedRating.code} · {selectedRating.name})
           </h3>
           <p className="text-[11px] text-muted-foreground">
-            Loaded criterias, scores, and condition marks configured for the selected rating.
+            Loaded tutorials, scores, and condition marks configured for the selected condition.
           </p>
         </div>
         <div className="inline-flex items-center gap-3 text-xs">
@@ -55,7 +55,7 @@ function EvaluationCriteriaTreeCard({ selectedRating, activeMainCriterias, expan
       </div>
 
       {activeMainCriterias.length === 0 ? (<p className="text-xs text-muted-foreground py-4">
-          No criterias are assigned to this rating in Masters → Ratings.
+          No tutorials are assigned to this condition in Masters → Conditions.
         </p>) : (<div className="space-y-3">
           {activeMainCriterias.map((mainCriteria) => {
                 const isMainOpen = expandedMainIds[mainCriteria.id] ?? true;
@@ -161,7 +161,7 @@ function SubmittedEvaluationsTable({ evaluations, }) {
             <tr>
               <th>Evaluation ID</th>
               <th>Supplier</th>
-              <th>Rating</th>
+              <th>Condition</th>
               <th>Period</th>
               <th className="text-right">Feasibility Score</th>
               <th className="text-right">Desirability Score</th>
@@ -277,8 +277,12 @@ export function Evaluation() {
     const totalScore = activeMainCriterias.reduce((sum, main) => sum + main.subCriterias.reduce((s, sub) => s + getSubScore(sub.id), 0), 0);
     const totalMarks = activeMainCriterias.reduce((sum, main) => sum + main.subCriterias.reduce((s, sub) => s + getSubMarks(sub.id), 0), 0);
     const percentage = totalScore > 0 ? Math.round((totalMarks / totalScore) * 100) : 0;
-    const feasibilityMainCriterias = activeMainCriterias.filter((m) => m.criteriaType === "Category");
-    const desirabilityMainCriterias = activeMainCriterias.filter((m) => m.criteriaType === "Performance");
+    const feasibilityMainCriterias = activeMainCriterias.filter(
+        (m) => m.criteriaType?.toLowerCase() === "feasibility" || m.criteriaType === "Category"
+    );
+    const desirabilityMainCriterias = activeMainCriterias.filter(
+        (m) => m.criteriaType?.toLowerCase() === "desirability" || m.criteriaType === "Performance"
+    );
     const feasibilityTotalScore = feasibilityMainCriterias.reduce((sum, main) => sum + main.subCriterias.reduce((s, sub) => s + getSubScore(sub.id), 0), 0);
     const feasibilityTotalMarks = feasibilityMainCriterias.reduce((sum, main) => sum + main.subCriterias.reduce((s, sub) => s + getSubMarks(sub.id), 0), 0);
     const feasibilityScore = feasibilityTotalScore > 0
@@ -325,7 +329,7 @@ export function Evaluation() {
       <EvaluationHeaderFilters suppliersList={suppliersList} ratingMasters={ratingMasters} selectedSupplier={selectedSupplier} selectedRatingId={selectedRatingId} fromDate={fromDate} toDate={toDate} onSupplierChange={handleSupplierChange} onRatingChange={handleRatingSelectChange} onFromDateChange={setFromDate} onToDateChange={setToDate}/>
 
       {!selectedRating ? (<div className="master-table p-8 text-center text-xs text-muted-foreground">
-          Select a <strong>Rating</strong> above to load the evaluation criteria tree, scores, and
+          Select a <strong>Condition</strong> above to load the evaluation tutorials tree, scores, and
           marks for <strong>{selectedSupplier}</strong>.
         </div>) : (<>
           <div className="score-strip mb-5">
@@ -342,7 +346,7 @@ export function Evaluation() {
                 {fromDate || "—"} to {toDate || "—"}
               </p>
             </div>
-            <span className="badge ml-auto">{selectedRating.supplierType} Rating</span>
+            <span className="badge ml-auto">{selectedRating.supplierType} Condition</span>
           </div>
 
           <EvaluationCriteriaTreeCard selectedRating={selectedRating} activeMainCriterias={activeMainCriterias} expandedMainIds={expandedMainIds} selectedConditionBySub={selectedConditionBySub} totalScore={totalScore} totalMarks={totalMarks} getSubScore={getSubScore} getSubMarks={getSubMarks} onToggleExpandMain={toggleExpandMain} onConditionSelect={handleConditionSelect} onMarksInput={handleMarksInput}/>
@@ -357,7 +361,7 @@ export function Evaluation() {
         </small>
         <Button onClick={() => {
             if (!selectedRating) {
-                setMessage("Please select a Rating before saving the evaluation.");
+                setMessage("Please select a Condition before saving the evaluation.");
                 return;
             }
             if (!fromDate || !toDate) {

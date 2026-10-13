@@ -48,7 +48,7 @@ export function RegistrationBanner() {
       </div>
     </div>);
 }
-export function RegistrationHeaderForm({ header, setHeader, setSubmitted, showPassword, setShowPassword, }) {
+export function RegistrationHeaderForm({ header, setHeader, setSubmitted, showPassword, setShowPassword, showConfirmPassword, setShowConfirmPassword, }) {
     return (<section className="form-section">
       <div className="section-heading">
         <h2>Registration Header</h2>
@@ -68,13 +68,19 @@ export function RegistrationHeaderForm({ header, setHeader, setSubmitted, showPa
                   <Button variant="ghost" size="icon" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(!showPassword)}>
                     {showPassword ? <EyeOff /> : <Eye />}
                   </Button>
+                </div>) : key === "Confirm Password" ? (<div className="password-wrap">
+                  <input type={showConfirmPassword ? "text" : "password"} autoComplete="new-password" placeholder="Re-enter password" maxLength={128} value={value} onChange={(e) => setHeader({ ...header, [key]: e.target.value })}/>
+                  <Button variant="ghost" size="icon" aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"} onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                    {showConfirmPassword ? <EyeOff /> : <Eye />}
+                  </Button>
                 </div>) : (<input type={key === "Email" ? "email" : "text"} maxLength={200} value={value} onChange={(e) => setHeader({ ...header, [key]: e.target.value })}/>)}
             </Field>
           </div>))}
       </div>
     </section>);
 }
-export function DocumentOverviewSection({ type, uploaded, requiredDocs, uploads, }) {
+export function DocumentOverviewSection({ type, uploaded, requiredDocs, uploads, additionalDocs = [], }) {
+    const attachedAdditional = additionalDocs.filter((doc) => Boolean(doc.fileName));
     return (<section className="document-overview">
       <div className="section-heading">
         <h2>Attachments</h2>
@@ -83,6 +89,9 @@ export function DocumentOverviewSection({ type, uploaded, requiredDocs, uploads,
           <span className="ml-3 text-primary">
             {uploaded}/{requiredDocs.length}
           </span>
+          {additionalDocs.length > 0 && (<span className="ml-3 text-muted-foreground">
+              · Additional: {attachedAdditional.length}/{additionalDocs.length}
+            </span>)}
         </span>
       </div>
       <div className="document-cards">
@@ -95,6 +104,16 @@ export function DocumentOverviewSection({ type, uploaded, requiredDocs, uploads,
             <h3>{doc.name}</h3>
             <small>{uploads[doc.code] || "Awaiting upload"}</small>
             <div className="document-progress" data-complete={Boolean(uploads[doc.code])}/>
+          </div>))}
+        {additionalDocs.map((doc) => (<div key={doc.id} className={`document-card ${doc.fileName ? "" : "pending"}`}>
+            <div className="flex justify-between">
+              <FileText size={19}/>
+              {doc.fileName && <Check size={14}/>}
+            </div>
+            <div className="document-code">{doc.code} · OPTIONAL</div>
+            <h3>{doc.name || "Additional Document"}</h3>
+            <small>{doc.fileName || "Optional attachment"}</small>
+            <div className="document-progress" data-complete={Boolean(doc.fileName)}/>
           </div>))}
       </div>
     </section>);

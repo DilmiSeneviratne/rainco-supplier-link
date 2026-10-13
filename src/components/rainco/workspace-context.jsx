@@ -1,7 +1,110 @@
 import { createContext, useContext, useState } from "react";
 import { ThemeProvider } from "@mui/material";
 import { raincoMuiTheme } from "./workspace-theme";
-import { initialCriterias, initialDepartments, initialDocuments, initialEvaluations, initialProcesses, initialRatingMasters, initialStages, initialSupplier, initialSuppliersList, initialSupplierTypes, initialSystemUsers, initialTemplate, initialUserPermissions, } from "./workspace-data";
+import { initialCriterias, initialDepartments, initialDocuments, initialEmployees, initialEvaluations, initialProcesses, initialRatingMasters, initialStages, initialSupplier, initialSuppliersList, initialSupplierTypes, initialSystemUsers, initialTemplate, initialUserPermissions, } from "./workspace-data";
+export const initialQuotations = [
+    {
+        id: "PQ-2026-0042",
+        issuedDate: "06 Oct 2026",
+        requiredDate: "2026-10-15",
+        status: "Pending",
+        attachments: [],
+        items: [
+            {
+                itemNo: "ITM-1001",
+                itemName: "Polyester fabric · Navy",
+                requiredDate: "2026-10-15",
+                requiredQuantity: 500,
+                uom: "m",
+                lastPurchasePrice: 1220,
+                quotedDate: "2026-10-14",
+                quotedQuantity: 500,
+                unitPrice: 1250,
+                discount: 0,
+                taxCode: "VAT-18",
+            },
+            {
+                itemNo: "ITM-1002",
+                itemName: "Waterproof canopy coating resin",
+                requiredDate: "2026-10-15",
+                requiredQuantity: 120,
+                uom: "kg",
+                lastPurchasePrice: 3350,
+                quotedDate: "2026-10-15",
+                quotedQuantity: 120,
+                unitPrice: 3400,
+                discount: 5,
+                taxCode: "VAT-18",
+            },
+        ],
+    },
+    {
+        id: "PQ-2026-0048",
+        issuedDate: "08 Oct 2026",
+        requiredDate: "2026-10-22",
+        status: "Pending",
+        attachments: [],
+        items: [
+            {
+                itemNo: "ITM-2014",
+                itemName: "Fiberglass umbrella ribs · 24 inch",
+                requiredDate: "2026-10-22",
+                requiredQuantity: 2000,
+                uom: "pcs",
+                lastPurchasePrice: 180,
+                quotedDate: "2026-10-20",
+                quotedQuantity: 2000,
+                unitPrice: 185,
+                discount: 2,
+                taxCode: "SVAT-0",
+            },
+        ],
+    },
+    {
+        id: "PQ-2026-0039",
+        issuedDate: "28 Sep 2026",
+        requiredDate: "2026-10-05",
+        status: "Completed",
+        attachments: ["Price_Schedule_PQ_0039.pdf"],
+        items: [
+            {
+                itemNo: "ITM-3005",
+                itemName: "Anodized aluminum center shaft · 14mm",
+                requiredDate: "2026-10-05",
+                requiredQuantity: 1500,
+                uom: "pcs",
+                lastPurchasePrice: 310,
+                quotedDate: "2026-10-04",
+                quotedQuantity: 1500,
+                unitPrice: 305,
+                discount: 3,
+                taxCode: "VAT-18",
+            },
+        ],
+    },
+    {
+        id: "PQ-2026-0031",
+        issuedDate: "19 Sep 2026",
+        requiredDate: "2026-09-29",
+        status: "Canceled",
+        attachments: [],
+        items: [
+            {
+                itemNo: "ITM-4012",
+                itemName: "Wooden curved umbrella handles · Matte finish",
+                requiredDate: "2026-09-29",
+                requiredQuantity: 800,
+                uom: "pcs",
+                lastPurchasePrice: 245,
+                quotedDate: "2026-09-27",
+                quotedQuantity: 800,
+                unitPrice: 250,
+                discount: 0,
+                taxCode: "EXEMPT",
+            },
+        ],
+    },
+];
 const globalForWorkspace = globalThis;
 const WorkspaceContext = globalForWorkspace.__RAINCO_WORKSPACE_CONTEXT__ ??
     (globalForWorkspace.__RAINCO_WORKSPACE_CONTEXT__ = createContext(null));
@@ -10,15 +113,21 @@ const fallbackWorkspaceContext = {
     setRole: () => { },
     documents: initialDocuments,
     setDocuments: () => { },
+    quotations: initialQuotations,
+    setQuotations: () => { },
     supplierTypes: initialSupplierTypes,
     saveSupplierType: () => { },
     deleteSupplierType: () => { },
     departments: initialDepartments,
     saveDepartment: () => { },
     deleteDepartment: () => { },
+    employees: initialEmployees,
     criterias: initialCriterias,
     saveCriteria: () => { },
     deleteCriteria: () => { },
+    tutorials: initialCriterias,
+    saveTutorial: () => { },
+    deleteTutorial: () => { },
     ratingMasters: initialRatingMasters,
     saveRatingMaster: () => { },
     deleteRatingMaster: () => { },
@@ -62,8 +171,10 @@ export function useWorkspace() {
 export function WorkspaceProvider({ children }) {
     const [role, setRole] = useState("supplier");
     const [documents, setDocuments] = useState(initialDocuments);
+    const [quotations, setQuotations] = useState(initialQuotations);
     const [supplierTypes, setSupplierTypes] = useState(initialSupplierTypes);
     const [departments, setDepartments] = useState(initialDepartments);
+    const [employees] = useState(initialEmployees);
     const [criterias, setCriterias] = useState(initialCriterias);
     const [ratingMasters, setRatingMasters] = useState(initialRatingMasters);
     const [systemUsers, setSystemUsers] = useState(initialSystemUsers);
@@ -77,8 +188,8 @@ export function WorkspaceProvider({ children }) {
     const [approvalProcesses, setApprovalProcesses] = useState(initialProcesses);
     const [evaluations, setEvaluations] = useState(initialEvaluations);
     const createApprovalProcessForSection = (processType, targetId, title, subtitle) => {
-        const matchingTemplate = templates.find((t) => t.isActive && (t.authorizedSections ?? []).includes(processType)) ||
-            templates.find((t) => (t.authorizedSections ?? []).includes(processType)) ||
+        const matchingTemplate = templates.find((t) => t.isActive && ((t.authorizedSections ?? []).includes(processType) || (processType === "Conditions" && (t.authorizedSections ?? []).includes("Ratings")))) ||
+            templates.find((t) => (t.authorizedSections ?? []).includes(processType) || (processType === "Conditions" && (t.authorizedSections ?? []).includes("Ratings"))) ||
             templates.find((t) => t.isActive) ||
             templates[0] ||
             initialTemplate;
@@ -176,11 +287,11 @@ export function WorkspaceProvider({ children }) {
             return [...prev, withStatus];
         });
         const totalWeight = Object.values(withStatus.subCriteriaWeights ?? {}).reduce((sum, w) => sum + (Number(w) || 0), 0);
-        createApprovalProcessForSection("Ratings", withStatus.id, `${withStatus.code} · ${withStatus.name}`, `${withStatus.supplierType} Supplier Rating · Weightage: ${totalWeight}%`);
+        createApprovalProcessForSection("Conditions", withStatus.id, `${withStatus.code} · ${withStatus.name}`, `${withStatus.supplierType} Supplier Condition · Weightage: ${totalWeight}%`);
     };
     const deleteRatingMaster = (id) => {
         setRatingMasters((prev) => prev.filter((r) => r.id !== id));
-        setApprovalProcesses((prev) => prev.filter((p) => !(p.processType === "Ratings" && p.targetId === id)));
+        setApprovalProcesses((prev) => prev.filter((p) => !((p.processType === "Ratings" || p.processType === "Conditions") && p.targetId === id)));
     };
     const submitEvaluationForApproval = (evalData) => {
         const newEval = {
@@ -317,7 +428,7 @@ export function WorkspaceProvider({ children }) {
                     setSupplier((s) => (s.name === proc.supplierName ? { ...s, status: "Active" } : s));
                     setSuppliersList((list) => list.map((s) => (s.name === proc.supplierName ? { ...s, status: "Active" } : s)));
                 }
-                else if (proc.processType === "Ratings" && proc.targetId) {
+                else if ((proc.processType === "Ratings" || proc.processType === "Conditions") && proc.targetId) {
                     setRatingMasters((list) => list.map((r) => (r.id === proc.targetId ? { ...r, approvalStatus: "Approved" } : r)));
                 }
                 else if (proc.processType === "Supplier Evaluation" && proc.targetId) {
@@ -354,7 +465,7 @@ export function WorkspaceProvider({ children }) {
                     updatedAt: nowStr,
                 };
             });
-            if (proc.processType === "Ratings" && proc.targetId) {
+            if ((proc.processType === "Ratings" || proc.processType === "Conditions") && proc.targetId) {
                 setRatingMasters((list) => list.map((r) => (r.id === proc.targetId ? { ...r, approvalStatus: "Rejected" } : r)));
             }
             else if (proc.processType === "Supplier Evaluation" && proc.targetId) {
@@ -404,15 +515,21 @@ export function WorkspaceProvider({ children }) {
             setRole,
             documents,
             setDocuments,
+            quotations,
+            setQuotations,
             supplierTypes,
             saveSupplierType,
             deleteSupplierType,
             departments,
             saveDepartment,
             deleteDepartment,
+            employees,
             criterias,
             saveCriteria,
             deleteCriteria,
+            tutorials: criterias,
+            saveTutorial: saveCriteria,
+            deleteTutorial: deleteCriteria,
             ratingMasters,
             saveRatingMaster,
             deleteRatingMaster,

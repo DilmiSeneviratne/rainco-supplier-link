@@ -98,7 +98,7 @@ function RatingsMasterReviewCard({ activeProcess, ratingMasters, criterias, }) {
         ratingMasters.find((r) => activeProcess.supplierName.includes(r.code)) ??
         ratingMasters[0];
     if (!matchedRating) {
-        return <p className="text-muted-foreground">No rating configuration details found.</p>;
+        return <p className="text-muted-foreground">No condition configuration details found.</p>;
     }
     const chosenCriterias = criterias.filter((c) => (matchedRating.selectedCriteriaIds ?? []).includes(c.id));
     const totalWeight = Object.values(matchedRating.subCriteriaWeights ?? {}).reduce((sum, w) => sum + (Number(w) || 0), 0);
@@ -106,13 +106,13 @@ function RatingsMasterReviewCard({ activeProcess, ratingMasters, criterias, }) {
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 p-3.5 rounded border border-border bg-card">
         <div>
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
-            Rate Code
+            Condition Code
           </span>
           <strong className="font-mono text-primary">{matchedRating.code}</strong>
         </div>
         <div className="sm:col-span-2">
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
-            Rate Name
+            Condition Name
           </span>
           <strong className="text-foreground">{matchedRating.name}</strong>
         </div>
@@ -128,7 +128,7 @@ function RatingsMasterReviewCard({ activeProcess, ratingMasters, criterias, }) {
 
       <div className="space-y-2.5">
         <span className="font-semibold text-foreground block">
-          Configured Criterias, Sub-Criteria Weightages &amp; Condition Marks
+          Configured Tutorials, Sub-Tutorial Weightages &amp; Condition Marks
         </span>
         {chosenCriterias.map((main) => (<div key={main.id} className="rounded border border-border bg-card overflow-hidden">
             <div className="px-3 py-2 bg-muted/40 border-b border-border flex items-center justify-between">
@@ -341,7 +341,11 @@ export function SupplierApprovalQueueTab() {
     const [remarkText, setRemarkText] = useState("");
     const [feedback, setFeedback] = useState("");
     const [showDetails, setShowDetails] = useState(true);
-    const filteredProcesses = approvalProcesses.filter((p) => p.processType === filterType);
+    const isMatchingProcessType = (pType, filter) => {
+        if (filter === "Conditions") return pType === "Conditions" || pType === "Ratings";
+        return pType === filter;
+    };
+    const filteredProcesses = approvalProcesses.filter((p) => isMatchingProcessType(p.processType, filterType));
     const activeProcess = filteredProcesses.find((p) => p.id === selectedProcessId) || filteredProcesses[0];
     const handleApprove = (stageId) => {
         if (!activeProcess)
@@ -367,7 +371,7 @@ export function SupplierApprovalQueueTab() {
     };
     const filterTabs = [
         { key: "Supplier Registration", label: "Supplier Registration" },
-        { key: "Ratings", label: "Ratings" },
+        { key: "Conditions", label: "Conditions" },
         { key: "Supplier Evaluation", label: "Supplier Evaluation" },
     ];
     return (<div className="space-y-6">
@@ -375,7 +379,7 @@ export function SupplierApprovalQueueTab() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold text-foreground">
-              Multi-Stage Approval Queue (Supplier Registration, Ratings &amp; Evaluation)
+              Multi-Stage Approval Queue (Supplier Registration, Conditions &amp; Evaluation)
             </h2>
           </div>
           <span className="text-xs text-muted-foreground font-mono">
@@ -385,7 +389,7 @@ export function SupplierApprovalQueueTab() {
 
         <div className="child-tabs">
           {filterTabs.map((tab) => {
-            const count = approvalProcesses.filter((p) => p.processType === tab.key).length;
+            const count = approvalProcesses.filter((p) => isMatchingProcessType(p.processType, tab.key)).length;
             return (<button key={tab.key} type="button" className="tab-button" data-active={filterType === tab.key} onClick={() => {
                     setFilterType(tab.key);
                     setFeedback("");
@@ -498,7 +502,7 @@ export function SupplierApprovalQueueTab() {
 
                 {showDetails && (<div className="p-4 space-y-4 text-xs">
                     {activeProcess.processType === "Supplier Registration" && (<SupplierRegistrationReviewCard activeProcess={activeProcess} suppliersList={suppliersList} documents={documents}/>)}
-                    {activeProcess.processType === "Ratings" && (<RatingsMasterReviewCard activeProcess={activeProcess} ratingMasters={ratingMasters} criterias={criterias}/>)}
+                    {(activeProcess.processType === "Ratings" || activeProcess.processType === "Conditions") && (<RatingsMasterReviewCard activeProcess={activeProcess} ratingMasters={ratingMasters} criterias={criterias}/>)}
                     {activeProcess.processType === "Supplier Evaluation" && (<SupplierEvaluationReviewCard activeProcess={activeProcess} evaluations={evaluations}/>)}
                   </div>)}
               </div>

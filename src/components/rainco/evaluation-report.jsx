@@ -3,24 +3,14 @@ import { Download, FileText, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AccessNotice, PageHeading, useWorkspace, } from "./workspace";
 import { Field } from "./registration";
-function EvaluationReportFiltersBar({ filterSupplier, authorizedUser, suppliersList, systemUsers, onFilterChange, onAuthorizedUserChange, onGenerateReport, }) {
-    return (<div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+function EvaluationReportFiltersBar({ filterSupplier, suppliersList, onFilterChange, onGenerateReport, }) {
+    return (<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
       <Field label="Filter by Supplier">
         <select value={filterSupplier} onChange={(e) => onFilterChange(e.target.value)}>
           <option value="ALL">All Suppliers</option>
           {suppliersList.map((s) => (<option key={s.sapPartnerId} value={s.name}>
               {s.sapPartnerId} · {s.name}
             </option>))}
-        </select>
-      </Field>
-
-      <Field label="Authorised User">
-        <select value={authorizedUser} onChange={(e) => onAuthorizedUserChange(e.target.value)}>
-          {systemUsers
-            .filter((u) => u.isActive)
-            .map((u) => (<option key={u.id} value={u.fullName}>
-                {u.fullName} ({u.department})
-              </option>))}
         </select>
       </Field>
 
@@ -32,7 +22,7 @@ function EvaluationReportFiltersBar({ filterSupplier, authorizedUser, suppliersL
       </div>
     </div>);
 }
-function EvaluationReportResultsTable({ reportRows, onStatusAction, }) {
+function EvaluationReportResultsTable({ reportRows }) {
     return (<div className="overflow-x-auto rounded border border-border">
       <table className="data-table">
         <thead>
@@ -42,7 +32,6 @@ function EvaluationReportResultsTable({ reportRows, onStatusAction, }) {
             <th>Evaluation results</th>
             <th className="text-right">Rating</th>
             <th className="text-center">Master Status</th>
-            <th className="text-right">Master Data Action</th>
           </tr>
         </thead>
         <tbody>
@@ -66,22 +55,9 @@ function EvaluationReportResultsTable({ reportRows, onStatusAction, }) {
                   {row.status}
                 </span>
               </td>
-              <td className="text-right">
-                <div className="inline-flex items-center justify-end gap-1.5">
-                  <Button type="button" size="sm" variant={row.status === "Active" ? "default" : "outline"} disabled={row.status === "Active"} onClick={() => onStatusAction(row.supplierName, row.supplierCode, "Active")} className="h-6 text-[11px] px-2">
-                    Activate
-                  </Button>
-                  <Button type="button" size="sm" variant="outline" disabled={row.status === "Inactive"} onClick={() => onStatusAction(row.supplierName, row.supplierCode, "Inactive")} className="h-6 text-[11px] px-2 border-amber-500/40 text-amber-700 hover:bg-amber-500/10">
-                    Make Inactive
-                  </Button>
-                  <Button type="button" size="sm" variant="outline" disabled={row.status === "Blacklisted"} onClick={() => onStatusAction(row.supplierName, row.supplierCode, "Blacklisted")} className="h-6 text-[11px] px-2 border-destructive/40 text-destructive hover:bg-destructive/10">
-                    Blacklist
-                  </Button>
-                </div>
-              </td>
             </tr>))}
           {reportRows.length === 0 && (<tr>
-              <td colSpan={6} className="text-center text-xs text-muted-foreground py-6">
+              <td colSpan={5} className="text-center text-xs text-muted-foreground py-6">
                 No matching supplier evaluation records found.
               </td>
             </tr>)}
@@ -90,11 +66,9 @@ function EvaluationReportResultsTable({ reportRows, onStatusAction, }) {
     </div>);
 }
 export function SupplierEvaluationReportSection({ standalone = false }) {
-    const { suppliersList, evaluations, systemUsers, updateSupplierMasterStatus } = useWorkspace();
+    const { suppliersList, evaluations } = useWorkspace();
     const [filterSupplier, setFilterSupplier] = useState("ALL");
-    const [authorizedUser, setAuthorizedUser] = useState(systemUsers[0]?.fullName ?? "Sunil Jayawardena");
     const [reportGenerated, setReportGenerated] = useState(true);
-    const [actionNotice, setActionNotice] = useState(null);
     const reportRows = suppliersList
         .filter((s) => (filterSupplier === "ALL" ? true : s.name === filterSupplier))
         .map((s) => {
@@ -120,27 +94,6 @@ export function SupplierEvaluationReportSection({ standalone = false }) {
             transactionBlocked: Boolean(s.transactionBlocked) || s.status === "Inactive" || s.status === "Blacklisted",
         };
     });
-    const handleStatusAction = (supplierName, supplierCode, newStatus) => {
-        updateSupplierMasterStatus(supplierName, newStatus, authorizedUser);
-        if (newStatus === "Active") {
-            setActionNotice({
-                tone: "success",
-                text: `Supplier Master Data for ${supplierCode} · ${supplierName} activated by ${authorizedUser}. All transaction levels (Purchase Quotations, Purchase Orders, GRN, and AP Invoicing) are enabled.`,
-            });
-        }
-        else if (newStatus === "Inactive") {
-            setActionNotice({
-                tone: "error",
-                text: `Supplier Master Data for ${supplierCode} · ${supplierName} marked as Inactive by ${authorizedUser}. Supplier has been automatically deactivated from all transaction levels (Purchase Quotations, Purchase Orders, GRN, and AP Invoicing).`,
-            });
-        }
-        else {
-            setActionNotice({
-                tone: "error",
-                text: `Supplier Master Data for ${supplierCode} · ${supplierName} Blacklisted by ${authorizedUser}. Supplier has been permanently blocked and deactivated from all transaction levels.`,
-            });
-        }
-    };
     const handleExportCsv = () => {
         const headers = [
             "Supplier Code",
@@ -191,13 +144,9 @@ export function SupplierEvaluationReportSection({ standalone = false }) {
         </div>
       </div>
 
-      <EvaluationReportFiltersBar filterSupplier={filterSupplier} authorizedUser={authorizedUser} suppliersList={suppliersList} systemUsers={systemUsers} onFilterChange={setFilterSupplier} onAuthorizedUserChange={setAuthorizedUser} onGenerateReport={() => setReportGenerated(true)}/>
+      <EvaluationReportFiltersBar filterSupplier={filterSupplier} suppliersList={suppliersList} onFilterChange={setFilterSupplier} onGenerateReport={() => setReportGenerated(true)}/>
 
-      {actionNotice && (<div className={`notice ${actionNotice.tone === "error" ? "error" : "success"}`} role="status">
-          {actionNotice.text}
-        </div>)}
-
-      {reportGenerated && (<EvaluationReportResultsTable reportRows={reportRows} onStatusAction={handleStatusAction}/>)}
+      {reportGenerated && <EvaluationReportResultsTable reportRows={reportRows}/>}
     </div>);
 }
 export function EvaluationReport() {

@@ -22,12 +22,12 @@ function getBreadcrumbLabel(pathname) {
         return "Masters / Supplier Checklist";
     if (pathname === "/supplier-types")
         return "Masters / Supplier Types";
-    if (pathname === "/departments")
-        return "Masters / Departments";
-    if (pathname === "/criterias")
-        return "Masters / Criterias";
+    if (pathname === "/employees")
+        return "Masters / Employee Master";
+    if (pathname === "/tutorials" || pathname === "/criterias")
+        return "Masters / Tutorials";
     if (pathname === "/ratings-master")
-        return "Masters / Ratings";
+        return "Masters / Conditions";
     if (pathname === "/users")
         return "Administration / Users";
     if (pathname === "/user-permissions")
@@ -55,6 +55,7 @@ export function WorkspaceTopBar({ pathname, onOpenMobileMenu, }) {
     const { role, isLoggedIn, logout } = useWorkspace();
     const router = useRouter();
     return (<AppBar position="sticky" color="inherit" elevation={0} sx={{
+            zIndex: 20,
             borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
             bgcolor: "rgba(255, 255, 255, 0.9)",
             backdropFilter: "blur(10px)",

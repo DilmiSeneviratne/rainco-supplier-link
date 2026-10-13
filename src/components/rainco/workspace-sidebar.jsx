@@ -12,9 +12,9 @@ export const portalNav = [
 export const mastersNav = [
     { to: "/checklist", label: "Supplier Checklist", icon: FileCheck2 },
     { to: "/supplier-types", label: "Supplier Types", icon: Building2 },
-    { to: "/departments", label: "Departments", icon: Layers },
-    { to: "/criterias", label: "Criterias", icon: ListOrdered },
-    { to: "/ratings-master", label: "Ratings", icon: Star },
+    { to: "/employees", label: "Employee Master", icon: Users },
+    { to: "/tutorials", label: "Tutorials", icon: ListOrdered },
+    { to: "/ratings-master", label: "Conditions", icon: Star },
 ];
 export const adminNav = [
     { to: "/users", label: "Users", icon: Users },

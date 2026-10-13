@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Clock, CreditCard, Star, Wallet } from "lucide-react";
+import { Clock, CreditCard, FileText, Star, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AccessNotice, PageHeading, useWorkspace } from "./workspace";
 const pendingPayments = [
@@ -29,10 +29,12 @@ const pendingPayments = [
     },
 ];
 export function Dashboard() {
-    const { role, supplier } = useWorkspace();
+    const { role, supplier, quotations } = useWorkspace();
     if (role !== "supplier")
         return <AccessNotice audience="supplier"/>;
     const totalOutstanding = pendingPayments.reduce((sum, item) => sum + item.amount, 0);
+    const pendingQuotations = (quotations ?? []).filter((q) => q.status === "Pending" || q.status === "Awaiting Response");
+    const pendingQuotationsCount = pendingQuotations.length;
     const isDeactivated = supplier.transactionBlocked ||
         supplier.status === "Inactive" ||
         supplier.status === "Blacklisted";
@@ -45,8 +47,8 @@ export function Dashboard() {
           Invoicing) based on the Supplier Evaluation Result Report.
         </div>)}
 
-      {/* Summary Cards: Evaluation Rating & Outstanding / Pending Payment */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Summary Cards: Evaluation Rating, Pending Quotations & Outstanding / Pending Payment */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Evaluation Rating Card */}
         <div className="p-6 rounded-lg border border-border bg-card flex flex-col justify-between space-y-4">
           <div className="flex items-center justify-between">
@@ -71,6 +73,34 @@ export function Dashboard() {
             <span>Evaluation period: July – September 2026</span>
             <Button asChild size="sm" variant="outline" className="h-7 text-xs">
               <Link to="/ratings">View My Evaluation</Link>
+            </Button>
+          </div>
+        </div>
+
+        {/* Pending Quotations Card */}
+        <div className="p-6 rounded-lg border border-border bg-card flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Pending Quotations
+            </span>
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <FileText size={18}/>
+            </div>
+          </div>
+
+          <div className="flex items-baseline gap-3">
+            <div className="text-4xl font-bold font-mono tracking-tight text-foreground tabular-nums">
+              {pendingQuotationsCount}
+            </div>
+            <span className="badge pending text-[10px]">
+              {pendingQuotationsCount === 1 ? "1 Quotation Awaiting Response" : `${pendingQuotationsCount} Quotations Awaiting Response`}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between pt-3 border-t border-border text-xs text-muted-foreground">
+            <span>Total issued: {(quotations ?? []).length} quotations</span>
+            <Button asChild size="sm" variant="outline" className="h-7 text-xs">
+              <Link to="/quotations">View Quotations</Link>
             </Button>
           </div>
         </div>

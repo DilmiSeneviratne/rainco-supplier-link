@@ -12,22 +12,29 @@ const initialHeader = {
     "Phone No": "+94 77 204 8813",
     "Type of Business": "Corporate",
     Currency: "LKR",
-    "Business Registration No": "PV-00827412",
+    "NIC / Business Registration No / Government ID No": "PV-00827412",
     Username: "northwind_ops",
     Password: "",
+    "Confirm Password": "",
     Remark: "Referred by Rainco procurement team for industrial supply.",
 };
 const text = z.string().trim().min(1).max(200);
-const registrationSchema = z.object({
+const registrationSchema = z
+    .object({
     Name: text,
     Email: z.string().email().max(255),
     "Phone No": z.string().regex(/^[+\d\s()-]{7,25}$/),
     "Type of Business": z.enum(["Individual", "Corporate", "Government"]),
     Currency: z.enum(["LKR", "USD", "EUR", "GBP"]),
-    "Business Registration No": text,
+    "NIC / Business Registration No / Government ID No": text,
     Username: z.string().regex(/^[a-zA-Z0-9_.-]{3,50}$/),
     Password: z.string().min(8).max(128),
+    "Confirm Password": z.string().min(8).max(128),
     Remark: z.string().max(1000),
+})
+    .refine((data) => data.Password === data["Confirm Password"], {
+    message: "Passwords do not match",
+    path: ["Confirm Password"],
 });
 export function Registration() {
     const { role, documents, registerSupplier } = useWorkspace();
@@ -67,7 +74,9 @@ export function Registration() {
         Zipcode: "00300",
     });
     const [uploads, setUploads] = useState({});
+    const [additionalDocs, setAdditionalDocs] = useState([]);
     const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [message, setMessage] = useState("");
     const [submitted, setSubmitted] = useState(false);
     const [editing, setEditing] = useState(null);
@@ -75,6 +84,20 @@ export function Registration() {
     const type = header["Type of Business"];
     const requiredDocs = documents[type];
     const uploaded = requiredDocs.filter((doc) => uploads[doc.code]).length;
+    const attachedAdditionalCount = additionalDocs.filter((doc) => Boolean(doc.fileName)).length;
+    function addAdditionalDoc() {
+        const nextIndex = additionalDocs.length + 1;
+        const code = `ADD-${String(nextIndex).padStart(3, "0")}`;
+        setAdditionalDocs([
+            ...additionalDocs,
+            {
+                id: `${Date.now()}-${nextIndex}`,
+                code,
+                name: "",
+                fileName: "",
+            },
+        ]);
+    }
     function saveContact() {
         const valid = z
             .object({
@@ -113,6 +136,12 @@ export function Registration() {
             setMessage("Upload every required document for your selected business type.");
             return;
         }
+        const incompleteAdditional = additionalDocs.some((doc) => (doc.fileName && !doc.name.trim()) || (!doc.fileName && doc.name.trim()));
+        if (incompleteAdditional) {
+            setTab("Attachments");
+            setMessage("Please provide both a document name and a file for any added additional attachments, or remove empty rows.");
+            return;
+        }
         setSubmitted(true);
         registerSupplier({
             name: header.Name,
@@ -120,12 +149,12 @@ export function Registration() {
             phone: header["Phone No"],
             businessType: header["Type of Business"],
             currency: header.Currency,
-            registrationNo: header["Business Registration No"],
+            registrationNo: header["NIC / Business Registration No / Government ID No"],
             username: header.Username,
             password: header.Password || "password123",
             remark: header.Remark,
             contactsCount: contacts.length,
-            documentsAttached: uploaded,
+            documentsAttached: uploaded + attachedAdditionalCount,
             totalDocumentsRequired: requiredDocs.length,
         });
         setMessage("Registration submitted successfully! Redirecting to login page...");
@@ -138,14 +167,14 @@ export function Registration() {
     return (<>
       <RegistrationBanner />
 
-      <RegistrationHeaderForm header={header} setHeader={setHeader} setSubmitted={setSubmitted} showPassword={showPassword} setShowPassword={setShowPassword}/>
+      <RegistrationHeaderForm header={header} setHeader={setHeader} setSubmitted={setSubmitted} showPassword={showPassword} setShowPassword={setShowPassword} showConfirmPassword={showConfirmPassword} setShowConfirmPassword={setShowConfirmPassword}/>
 
       <section className="child-section">
         <div className="child-tabs" role="tablist" aria-label="Registration details">
           {[
             { name: "Contact Persons", icon: Users, count: contacts.length },
             { name: "Address Details", icon: MapPin, count: 1 },
-            { name: "Attachments", icon: Paperclip, count: requiredDocs.length },
+            { name: "Attachments", icon: Paperclip, count: requiredDocs.length + additionalDocs.length },
         ].map((t) => (<Button key={t.name} variant="tab" role="tab" aria-selected={tab === t.name} data-active={tab === t.name} onClick={() => setTab(t.name)}>
               <t.icon />
               {t.name}
@@ -211,30 +240,36 @@ export function Registration() {
               </div>
             </>)}
 
-          {tab === "Attachments" && (<>
-              <div className="table-toolbar">
-                <div>
-                  <strong>Required documents</strong>
+          {tab === "Attachments" && (<div className="space-y-6">
+              <div>
+                <div className="table-toolbar">
+                  <div>
+                    <strong>Required documents</strong>
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      ({uploaded}/{requiredDocs.length} attached)
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">PDF, JPG, PNG · Max 10 MB</span>
                 </div>
-                <span className="text-[10px] text-muted-foreground">PDF, JPG, PNG · Max 10 MB</span>
-              </div>
-              <div className="table-scroll">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Document Code</th>
-                      <th>Document Name</th>
-                      <th>Attachment</th>
-                      <th>Status</th>
-                      <th />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {requiredDocs.map((doc) => (<tr key={doc.code}>
-                        <td className="text-primary">{doc.code}</td>
-                        <td>{doc.name}</td>
-                        <td>
-                          <input className="upload-input" type="file" aria-label={`Upload ${doc.name}`} accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => {
+                <div className="table-scroll">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Document Code</th>
+                        <th>Document Name</th>
+                        <th>Attachment</th>
+                        <th>Status</th>
+                        <th />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {requiredDocs.map((doc) => (<tr key={doc.code}>
+                          <td className="text-primary">{doc.code}</td>
+                          <td>
+                            {doc.name} <span className="text-destructive">*</span>
+                          </td>
+                          <td>
+                            <input className="upload-input" type="file" aria-label={`Upload ${doc.name}`} accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (!file)
                         return;
@@ -247,33 +282,101 @@ export function Registration() {
                     setUploads({ ...uploads, [doc.code]: file.name });
                     setMessage("");
                 }}/>
-                          {uploads[doc.code] && (<small className="block mt-1 text-muted-foreground">
-                              {uploads[doc.code]}
-                            </small>)}
-                        </td>
-                        <td>
-                          <span className={`badge ${uploads[doc.code] ? "" : "pending"}`}>
-                            {uploads[doc.code] ? "Attached" : "Required"}
-                          </span>
-                        </td>
-                        <td>
-                          {uploads[doc.code] && (<Button variant="ghost" size="icon" aria-label={`Remove ${doc.name}`} onClick={() => {
+                            {uploads[doc.code] && (<small className="block mt-1 text-muted-foreground">
+                                {uploads[doc.code]}
+                              </small>)}
+                          </td>
+                          <td>
+                            <span className={`badge ${uploads[doc.code] ? "" : "pending"}`}>
+                              {uploads[doc.code] ? "Attached" : "Required"}
+                            </span>
+                          </td>
+                          <td>
+                            {uploads[doc.code] && (<Button variant="ghost" size="icon" aria-label={`Remove ${doc.name}`} onClick={() => {
                         const next = { ...uploads };
                         delete next[doc.code];
                         setUploads(next);
                     }}>
-                              <X />
-                            </Button>)}
-                        </td>
-                      </tr>))}
-                  </tbody>
-                </table>
+                                <X />
+                              </Button>)}
+                          </td>
+                        </tr>))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </>)}
+
+              <div className="pt-4 border-t border-border">
+                <div className="table-toolbar">
+                  <div>
+                    <strong>Additional attachments (Optional)</strong>
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      Upload any supporting certificates, brochures, or references
+                    </span>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={addAdditionalDoc}>
+                    <Plus />
+                    Add additional attachment
+                  </Button>
+                </div>
+
+                {additionalDocs.length === 0 ? (<p className="text-xs text-muted-foreground py-3">
+                    No additional attachments added. Click &ldquo;Add additional attachment&rdquo; to include optional documents.
+                  </p>) : (<div className="table-scroll">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Document Code</th>
+                          <th>Document Name</th>
+                          <th>Attachment</th>
+                          <th>Status</th>
+                          <th />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {additionalDocs.map((doc) => (<tr key={doc.id}>
+                            <td className="text-primary font-mono text-xs">{doc.code}</td>
+                            <td>
+                              <input type="text" placeholder="Enter document name (e.g. ISO 9001 Certificate)" maxLength={150} value={doc.name} onChange={(e) => setAdditionalDocs(additionalDocs.map((d) => d.id === doc.id ? { ...d, name: e.target.value } : d))} className="w-full max-w-xs"/>
+                            </td>
+                            <td>
+                              <input className="upload-input" type="file" aria-label={`Upload ${doc.name || doc.code}`} accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file)
+                            return;
+                        if (file.size > 10 * 1024 * 1024 ||
+                            !["application/pdf", "image/jpeg", "image/png"].includes(file.type)) {
+                            setMessage("Choose a PDF, JPG or PNG file no larger than 10 MB.");
+                            e.target.value = "";
+                            return;
+                        }
+                        setAdditionalDocs(additionalDocs.map((d) => d.id === doc.id ? { ...d, fileName: file.name } : d));
+                        setMessage("");
+                    }}/>
+                              {doc.fileName && (<small className="block mt-1 text-muted-foreground">
+                                  {doc.fileName}
+                                </small>)}
+                            </td>
+                            <td>
+                              <span className={`badge ${doc.fileName ? "" : "pending"}`}>
+                                {doc.fileName ? "Attached" : "Optional"}
+                              </span>
+                            </td>
+                            <td className="text-right">
+                              <Button variant="ghost" size="icon" aria-label={`Remove additional document ${doc.code}`} onClick={() => setAdditionalDocs(additionalDocs.filter((d) => d.id !== doc.id))}>
+                                <Trash2 size={13}/>
+                              </Button>
+                            </td>
+                          </tr>))}
+                      </tbody>
+                    </table>
+                  </div>)}
+              </div>
+            </div>)}
         </div>
       </section>
 
-      {tab !== "Attachments" && (<DocumentOverviewSection type={type} uploaded={uploaded} requiredDocs={requiredDocs} uploads={uploads}/>)}
+      {tab !== "Attachments" && (<DocumentOverviewSection type={type} uploaded={uploaded} requiredDocs={requiredDocs} uploads={uploads} additionalDocs={additionalDocs}/>)}
 
       {message && (<div role="status" className={`notice ${submitted ? "success" : message.startsWith("Draft") ? "" : "error"}`}>
           {message}
