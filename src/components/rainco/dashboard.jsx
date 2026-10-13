@@ -3,49 +3,54 @@ import { Clock, CreditCard, FileText, Star, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AccessNotice, PageHeading, useWorkspace } from "./workspace";
 const pendingPayments = [
-    {
-        invoiceNo: "INV-2026-0841",
-        poReference: "PO-2026-0312",
-        invoiceDate: "22 Sep 2026",
-        dueDate: "22 Oct 2026",
-        amount: 420000,
-        status: "Pending Payment",
-    },
-    {
-        invoiceNo: "INV-2026-0894",
-        poReference: "PO-2026-0358",
-        invoiceDate: "01 Oct 2026",
-        dueDate: "31 Oct 2026",
-        amount: 315000,
-        status: "Pending Payment",
-    },
-    {
-        invoiceNo: "INV-2026-0912",
-        poReference: "PO-2026-0375",
-        invoiceDate: "05 Oct 2026",
-        dueDate: "04 Nov 2026",
-        amount: 185000,
-        status: "Under Verification",
-    },
+  {
+    invoiceNo: "INV-2026-0841",
+    poReference: "PO-2026-0312",
+    invoiceDate: "22 Sep 2026",
+    dueDate: "22 Oct 2026",
+    amount: 420000,
+    status: "Pending Payment",
+  },
+  {
+    invoiceNo: "INV-2026-0894",
+    poReference: "PO-2026-0358",
+    invoiceDate: "01 Oct 2026",
+    dueDate: "31 Oct 2026",
+    amount: 315000,
+    status: "Pending Payment",
+  },
+  {
+    invoiceNo: "INV-2026-0912",
+    poReference: "PO-2026-0375",
+    invoiceDate: "05 Oct 2026",
+    dueDate: "04 Nov 2026",
+    amount: 185000,
+    status: "Under Verification",
+  },
 ];
 export function Dashboard() {
-    const { role, supplier, quotations } = useWorkspace();
-    if (role !== "supplier")
-        return <AccessNotice audience="supplier"/>;
-    const totalOutstanding = pendingPayments.reduce((sum, item) => sum + item.amount, 0);
-    const pendingQuotations = (quotations ?? []).filter((q) => q.status === "Pending" || q.status === "Awaiting Response");
-    const pendingQuotationsCount = pendingQuotations.length;
-    const isDeactivated = supplier.transactionBlocked ||
-        supplier.status === "Inactive" ||
-        supplier.status === "Blacklisted";
-    return (<div className="space-y-6">
-      <PageHeading eyebrow="SUPPLIER PORTAL" title="Supplier Dashboard"/>
+  const { role, supplier, quotations } = useWorkspace();
+  if (role !== "supplier") return <AccessNotice audience="supplier" />;
+  const totalOutstanding = pendingPayments.reduce((sum, item) => sum + item.amount, 0);
+  const pendingQuotations = (quotations ?? []).filter(
+    (q) => q.status === "Pending" || q.status === "Awaiting Response",
+  );
+  const pendingQuotationsCount = pendingQuotations.length;
+  const isDeactivated =
+    supplier.transactionBlocked ||
+    supplier.status === "Inactive" ||
+    supplier.status === "Blacklisted";
+  return (
+    <div className="space-y-6">
+      <PageHeading eyebrow="SUPPLIER PORTAL" title="Supplier Dashboard" />
 
-      {isDeactivated && (<div className="notice error" role="alert">
+      {isDeactivated && (
+        <div className="notice error" role="alert">
           <strong>Supplier Master Status: {supplier.status}</strong> — Your account has been
           deactivated from all transaction levels (Purchase Quotations, Purchase Orders, GRN, and AP
           Invoicing) based on the Supplier Evaluation Result Report.
-        </div>)}
+        </div>
+      )}
 
       {/* Summary Cards: Evaluation Rating, Pending Quotations & Outstanding / Pending Payment */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -56,7 +61,7 @@ export function Dashboard() {
               Evaluation Rating
             </span>
             <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
-              <Star size={18}/>
+              <Star size={18} />
             </div>
           </div>
 
@@ -84,7 +89,7 @@ export function Dashboard() {
               Pending Quotations
             </span>
             <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <FileText size={18}/>
+              <FileText size={18} />
             </div>
           </div>
 
@@ -93,7 +98,9 @@ export function Dashboard() {
               {pendingQuotationsCount}
             </div>
             <span className="badge pending text-[10px]">
-              {pendingQuotationsCount === 1 ? "1 Quotation Awaiting Response" : `${pendingQuotationsCount} Quotations Awaiting Response`}
+              {pendingQuotationsCount === 1
+                ? "1 Quotation Awaiting Response"
+                : `${pendingQuotationsCount} Quotations Awaiting Response`}
             </span>
           </div>
 
@@ -112,7 +119,7 @@ export function Dashboard() {
               Total Outstanding Amount
             </span>
             <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <Wallet size={18}/>
+              <Wallet size={18} />
             </div>
           </div>
 
@@ -127,7 +134,7 @@ export function Dashboard() {
 
           <div className="flex items-center justify-between pt-3 border-t border-border text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
-              <Clock size={13} className="text-amber-500"/>
+              <Clock size={13} className="text-amber-500" />
               Next payment due: 22 Oct 2026
             </span>
             <span className="font-mono">SAP BP #{supplier.sapPartnerId}</span>
@@ -139,7 +146,7 @@ export function Dashboard() {
       <div className="rounded-lg border border-border bg-card p-6 space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-border">
           <div className="flex items-center gap-2">
-            <CreditCard size={16} className="text-primary"/>
+            <CreditCard size={16} className="text-primary" />
             <h2 className="text-sm font-semibold text-foreground">
               Outstanding & Pending Payments
             </h2>
@@ -160,7 +167,8 @@ export function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {pendingPayments.map((row) => (<tr key={row.invoiceNo}>
+              {pendingPayments.map((row) => (
+                <tr key={row.invoiceNo}>
                   <td className="font-mono text-xs text-primary font-medium">{row.invoiceNo}</td>
                   <td className="font-mono text-xs">{row.poReference}</td>
                   <td className="font-mono text-xs text-muted-foreground">{row.invoiceDate}</td>
@@ -169,11 +177,14 @@ export function Dashboard() {
                     {row.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </td>
                   <td className="text-center">
-                    <span className={`badge text-[10px] ${isDeactivated ? "bg-red-100 text-red-800" : "pending"}`}>
+                    <span
+                      className={`badge text-[10px] ${isDeactivated ? "bg-red-100 text-red-800" : "pending"}`}
+                    >
                       {isDeactivated ? `Transaction Hold (${supplier.status})` : row.status}
                     </span>
                   </td>
-                </tr>))}
+                </tr>
+              ))}
             </tbody>
             <tfoot>
               <tr className="border-t-2 border-border bg-muted/40 font-semibold">
@@ -190,5 +201,6 @@ export function Dashboard() {
           </table>
         </div>
       </div>
-    </div>);
+    </div>
+  );
 }

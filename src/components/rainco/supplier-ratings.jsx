@@ -1,68 +1,69 @@
 import { AccessNotice, PageHeading, useWorkspace } from "./workspace";
 const evaluationCriteriaRows = [
-    {
-        criteria: "Cost — Competitive Price",
-        indication: "≤10%",
-        score: 10,
-        marks: 6,
-    },
-    {
-        criteria: "Cost — Credit Period",
-        indication: "120 days",
-        score: 10,
-        marks: 10,
-    },
-    {
-        criteria: "Quality — Damage %- Incoming Inspection",
-        indication: "≤1.5%",
-        score: 10,
-        marks: 6,
-    },
-    {
-        criteria: "Quality — RM Stores Return Rate %- During the Process",
-        indication: "≤0.5%",
-        score: 10,
-        marks: 10,
-    },
-    {
-        criteria: "Quality — Corrective Actions",
-        indication: "1",
-        score: 10,
-        marks: 8,
-    },
-    {
-        criteria: "Supply — Supply on time (ETD Delay)",
-        indication: "3-4 days",
-        score: 10,
-        marks: 6,
-    },
-    {
-        criteria: "Supply — Ontime quantity (PO vs Delivery)",
-        indication: "≤2%",
-        score: 10,
-        marks: 10,
-    },
-    {
-        criteria: "Supply — Ordering to delivery lead time",
-        indication: "L+5",
-        score: 10,
-        marks: 8,
-    },
-    {
-        criteria: "Supply — Flexiblity to availability",
-        indication: "<60%",
-        score: 10,
-        marks: 0,
-    },
-    {
-        criteria: "Supply — MOQ",
-        indication: "M",
-        score: 10,
-        marks: 10,
-    },
+  {
+    criteria: "Cost — Competitive Price",
+    indication: "≤10%",
+    score: 10,
+    marks: 6,
+  },
+  {
+    criteria: "Cost — Credit Period",
+    indication: "120 days",
+    score: 10,
+    marks: 10,
+  },
+  {
+    criteria: "Quality — Damage %- Incoming Inspection",
+    indication: "≤1.5%",
+    score: 10,
+    marks: 6,
+  },
+  {
+    criteria: "Quality — RM Stores Return Rate %- During the Process",
+    indication: "≤0.5%",
+    score: 10,
+    marks: 10,
+  },
+  {
+    criteria: "Quality — Corrective Actions",
+    indication: "1",
+    score: 10,
+    marks: 8,
+  },
+  {
+    criteria: "Supply — Supply on time (ETD Delay)",
+    indication: "3-4 days",
+    score: 10,
+    marks: 6,
+  },
+  {
+    criteria: "Supply — Ontime quantity (PO vs Delivery)",
+    indication: "≤2%",
+    score: 10,
+    marks: 10,
+  },
+  {
+    criteria: "Supply — Ordering to delivery lead time",
+    indication: "L+5",
+    score: 10,
+    marks: 8,
+  },
+  {
+    criteria: "Supply — Flexiblity to availability",
+    indication: "<60%",
+    score: 10,
+    marks: 0,
+  },
+  {
+    criteria: "Supply — MOQ",
+    indication: "M",
+    score: 10,
+    marks: 10,
+  },
 ];
-function SupplierEvaluationScoreBanner({ percentage, totalMarks, totalScore, }) {
-    return (<div className="score-strip">
+function SupplierEvaluationScoreBanner({ percentage, totalMarks, totalScore }) {
+  return (
+    <div className="score-strip">
       <div className="big-score">
         {percentage}
         <small>%</small>
@@ -74,10 +75,12 @@ function SupplierEvaluationScoreBanner({ percentage, totalMarks, totalScore, }) 
         <p>Performance Scorecard · Date Modified: 30-Apr-2023</p>
       </div>
       <span className="badge ml-auto">Published</span>
-    </div>);
+    </div>
+  );
 }
-function SupplierEvaluationBreakdownTable({ rows, totalScore, totalMarks, }) {
-    return (<div className="master-table">
+function SupplierEvaluationBreakdownTable({ rows, totalScore, totalMarks }) {
+  return (
+    <div className="master-table">
       <table className="data-table">
         <thead>
           <tr>
@@ -88,12 +91,14 @@ function SupplierEvaluationBreakdownTable({ rows, totalScore, totalMarks, }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (<tr key={row.criteria}>
+          {rows.map((row) => (
+            <tr key={row.criteria}>
               <td className="font-medium text-foreground">{row.criteria}</td>
               <td className="font-mono text-xs">{row.indication}</td>
               <td className="font-mono tabular-nums">{row.score}%</td>
               <td className="font-mono tabular-nums text-primary font-semibold">{row.marks}%</td>
-            </tr>))}
+            </tr>
+          ))}
         </tbody>
         <tfoot>
           <tr className="border-t-2 border-border bg-muted/40 font-semibold">
@@ -105,18 +110,28 @@ function SupplierEvaluationBreakdownTable({ rows, totalScore, totalMarks, }) {
           </tr>
         </tfoot>
       </table>
-    </div>);
+    </div>
+  );
 }
 export function Ratings() {
-    const { role } = useWorkspace();
-    if (role !== "supplier")
-        return <AccessNotice audience="supplier"/>;
-    const totalScore = evaluationCriteriaRows.reduce((acc, r) => acc + r.score, 0);
-    const totalMarks = evaluationCriteriaRows.reduce((acc, r) => acc + r.marks, 0);
-    const percentage = totalScore > 0 ? Math.round((totalMarks / totalScore) * 100) : 0;
-    return (<>
-      <PageHeading eyebrow="SUPPLIER PORTAL" title="My Evaluation"/>
-      <SupplierEvaluationScoreBanner percentage={percentage} totalMarks={totalMarks} totalScore={totalScore}/>
-      <SupplierEvaluationBreakdownTable rows={evaluationCriteriaRows} totalScore={totalScore} totalMarks={totalMarks}/>
-    </>);
+  const { role } = useWorkspace();
+  if (role !== "supplier") return <AccessNotice audience="supplier" />;
+  const totalScore = evaluationCriteriaRows.reduce((acc, r) => acc + r.score, 0);
+  const totalMarks = evaluationCriteriaRows.reduce((acc, r) => acc + r.marks, 0);
+  const percentage = totalScore > 0 ? Math.round((totalMarks / totalScore) * 100) : 0;
+  return (
+    <>
+      <PageHeading eyebrow="SUPPLIER PORTAL" title="My Evaluation" />
+      <SupplierEvaluationScoreBanner
+        percentage={percentage}
+        totalMarks={totalMarks}
+        totalScore={totalScore}
+      />
+      <SupplierEvaluationBreakdownTable
+        rows={evaluationCriteriaRows}
+        totalScore={totalScore}
+        totalMarks={totalMarks}
+      />
+    </>
+  );
 }
