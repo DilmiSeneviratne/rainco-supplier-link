@@ -15,6 +15,7 @@ import {
   initialSupplierTypes,
   initialSystemUsers,
   initialTemplate,
+  initialTemplates,
   initialUserPermissions,
 } from "./workspace-data";
 export const initialQuotations = [
@@ -165,8 +166,9 @@ const fallbackWorkspaceContext = {
   stages: initialStages,
   saveStage: () => {},
   deleteStage: () => {},
-  templates: [initialTemplate],
+  templates: initialTemplates,
   saveTemplate: () => {},
+  deleteTemplate: () => {},
   approvalProcesses: initialProcesses,
   activeSupplierApprovalProcess: initialProcesses[0],
   approveStage: () => {},
@@ -200,7 +202,7 @@ export function WorkspaceProvider({ children }) {
   const [supplier, setSupplier] = useState(initialSupplier);
   const [lastRegistrationNotice, setLastRegistrationNotice] = useState(null);
   const [stages, setStages] = useState(initialStages);
-  const [templates, setTemplates] = useState([initialTemplate]);
+  const [templates, setTemplates] = useState(initialTemplates);
   const [approvalProcesses, setApprovalProcesses] = useState(initialProcesses);
   const [evaluations, setEvaluations] = useState(initialEvaluations);
   const createApprovalProcessForSection = (processType, targetId, title, subtitle) => {
@@ -449,15 +451,17 @@ export function WorkspaceProvider({ children }) {
   };
   const saveTemplate = (templateToSave) => {
     setTemplates((prev) => {
-      let updated = prev;
-      if (templateToSave.isActive) {
-        updated = prev.map((t) => (t.id === templateToSave.id ? t : { ...t, isActive: false }));
-      }
-      const exists = updated.some((t) => t.id === templateToSave.id);
+      const exists = prev.some((t) => t.id === templateToSave.id);
       if (exists) {
-        return updated.map((t) => (t.id === templateToSave.id ? templateToSave : t));
+        return prev.map((t) => (t.id === templateToSave.id ? templateToSave : t));
       }
-      return [...updated, templateToSave];
+      return [...prev, templateToSave];
+    });
+  };
+  const deleteTemplate = (id) => {
+    setTemplates((prev) => {
+      if (prev.length <= 1) return prev;
+      return prev.filter((t) => t.id !== id);
     });
   };
   const approveStage = (processId, stageId, authorizer, remark) => {
@@ -648,6 +652,7 @@ export function WorkspaceProvider({ children }) {
         deleteStage,
         templates,
         saveTemplate,
+        deleteTemplate,
         approvalProcesses,
         activeSupplierApprovalProcess,
         approveStage,

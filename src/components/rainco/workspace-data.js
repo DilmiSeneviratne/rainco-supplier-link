@@ -594,13 +594,26 @@ export const initialStages = [
 ];
 export const initialTemplate = {
   id: "TMPL-1",
-  name: "Standard Supplier & Evaluation Approval Template",
+  name: "Conditions & Evaluation Approval Template",
   description:
-    "Mandatory multi-department verification workflow for Supplier Registration, Conditions, and Supplier Evaluation.",
+    "Multi-department verification workflow for Conditions and Supplier Evaluation scorecard verification.",
   isActive: true,
-  authorizedSections: ["Supplier Registration", "Conditions", "Supplier Evaluation"],
+  authorizedSections: ["Conditions", "Supplier Evaluation"],
   stageIds: ["STAGE-1", "STAGE-2", "STAGE-3"],
 };
+
+export const initialTemplates = [
+  initialTemplate,
+  {
+    id: "TMPL-2",
+    name: "Supplier Registration Approval Template",
+    description:
+      "Procurement, compliance, and commercial sign-off workflow for new supplier onboarding.",
+    isActive: true,
+    authorizedSections: ["Supplier Registration"],
+    stageIds: ["STAGE-1", "STAGE-2", "STAGE-3"],
+  },
+];
 function buildScorecardEntries(selections) {
   return selections.map((s) => ({
     ...s,
@@ -1784,4 +1797,54 @@ export const initialProcesses = [
       },
     ],
   },
+  {
+    id: "PROC-005",
+    processType: "Conditions",
+    targetId: "RAT-1",
+    supplierName: "RAT-001 · Performance Scorecard",
+    supplierEmail: "Foreign Supplier Condition · Weightage: 100%",
+    registrationDate: "12 Oct 2026",
+    templateId: "TMPL-1",
+    templateName: "Conditions & Evaluation Approval Template",
+    currentStageIndex: 1,
+    overallStatus: "Pending Approval",
+    stages: [
+      {
+        stageId: "STAGE-1",
+        stageName: "Procurement Desk Review",
+        description:
+          "Verify condition tutorial selection, sub-tutorial weightages, and condition mark thresholds.",
+        approvalsRequired: 1,
+        rejectionsRequired: 1,
+        status: "Approved",
+        approvedBy: ["Sunil Jayawardena"],
+        rejectedBy: [],
+        remarks: ["Condition tutorials and mark thresholds verified."],
+        updatedAt: "12 Oct 2026, 09:30 AM",
+      },
+      {
+        stageId: "STAGE-2",
+        stageName: "Finance & Tax Verification",
+        description: "Verify pricing and commercial benchmark condition marks.",
+        approvalsRequired: 1,
+        rejectionsRequired: 1,
+        status: "Pending",
+        approvedBy: [],
+        rejectedBy: [],
+        remarks: [],
+      },
+      {
+        stageId: "STAGE-3",
+        stageName: "Commercial & Compliance Sign-off",
+        description: "Final executive approval to activate the condition master for evaluations.",
+        approvalsRequired: 1,
+        rejectionsRequired: 1,
+        status: "Pending",
+        approvedBy: [],
+        rejectedBy: [],
+        remarks: [],
+      },
+    ],
+  },
 ];
+

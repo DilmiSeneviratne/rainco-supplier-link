@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, CheckCircle2, Layers, ShieldCheck, X, XCircle } from "lucide-react";
+import { Check, CheckCircle2, Layers, Plus, ShieldCheck, Trash2, UserCheck, X, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AccessNotice, PageHeading, useWorkspace } from "./workspace";
 function SupplierRegistrationReviewCard({ activeProcess, suppliersList, documents }) {
@@ -306,106 +306,336 @@ function SupplierEvaluationReviewCard({ activeProcess, evaluations }) {
     </div>
   );
 }
-function ApprovalStageExecutionCard({
-  stage,
-  idx,
-  overallStatus,
+function ApprovalWorkflowGrid({
+  activeProcess,
+  isReadOnly,
+  systemUsers = [],
+  authorizerName,
   onApprove,
   onReject,
-  isReadOnly = false,
+  onSuccessNotice,
 }) {
-  const isApproved = stage.status === "Approved";
-  const isRejected = stage.status === "Rejected";
-  const isPending = stage.status === "Pending";
-  return (
-    <div
-      className={`p-4 rounded-lg border text-xs transition-colors ${
-        isApproved
-          ? "border-emerald-300 bg-emerald-50/40"
-          : isRejected
-            ? "border-red-300 bg-red-50/40"
-            : "border-border bg-card"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <span
-            className={`w-6 h-6 rounded-full grid place-items-center font-bold text-xs shrink-0 ${
-              isApproved
-                ? "bg-emerald-600 text-white"
-                : isRejected
-                  ? "bg-red-600 text-white"
-                  : "bg-muted text-muted-foreground border border-border"
-            }`}
-          >
-            {isApproved ? <Check size={13} /> : isRejected ? <X size={13} /> : idx + 1}
-          </span>
-          <div>
-            <div className="flex items-center gap-2">
-              <strong className="text-sm font-medium text-foreground">{stage.stageName}</strong>
-              <span className="font-mono text-[10px] text-muted-foreground">{stage.stageId}</span>
-            </div>
-          </div>
-        </div>
+  const [isAddingRow, setIsAddingRow] = useState(false);
+  const [newStageId, setNewStageId] = useState("");
+  const [newUser, setNewUser] = useState(authorizerName || "Sunil Jayawardena");
+  const [newRemark, setNewRemark] = useState("");
+  const [newStatus, setNewStatus] = useState("Approved");
 
-        <div className="shrink-0 text-right">
-          <span
-            className={`badge ${
-              isApproved
-                ? "bg-emerald-100 text-emerald-800"
-                : isRejected
-                  ? "bg-red-100 text-red-800"
-                  : "pending"
-            }`}
+  const stages = activeProcess?.stages ?? [];
+  const firstPendingStage = stages.find((s) => s.status === "Pending") || stages[0];
+
+  const handleOpenAddRow = () => {
+    setNewStageId(firstPendingStage?.stageId || stages[0]?.stageId || "");
+    setNewUser(authorizerName || "Sunil Jayawardena");
+    setNewRemark("");
+    setNewStatus("Approved");
+    setIsAddingRow(true);
+  };
+
+  const handleQuickAction = (stageId, status) => {
+    setNewStageId(stageId);
+    setNewUser(authorizerName || "Sunil Jayawardena");
+    setNewRemark("");
+    setNewStatus(status);
+    setIsAddingRow(true);
+  };
+
+  const handleSaveRow = () => {
+    if (!newStageId) return;
+    const finalUser = newUser.trim() || authorizerName || "Sunil Jayawardena";
+    const finalRemark =
+      newRemark.trim() ||
+      (newStatus === "Approved" ? "Approved after verification" : "Rejected after review");
+    const targetStage = stages.find((s) => s.stageId === newStageId);
+
+    if (newStatus === "Approved") {
+      onApprove(newStageId, finalUser, finalRemark);
+    } else {
+      onReject(newStageId, finalUser, finalRemark);
+    }
+
+    onSuccessNotice?.(
+      `Recorded ${newStatus.toLowerCase()} for "${targetStage?.stageName || newStageId}" by ${finalUser}.`,
+    );
+    setIsAddingRow(false);
+    setNewRemark("");
+  };
+
+  // Build rows showing previous approvals/rejections and pending stages
+  const rows = [];
+  stages.forEach((stage, idx) => {
+    const stageLabel = `Stage ${idx + 1}: ${stage.stageName}`;
+    let hasRecords = false;
+
+    if (stage.approvedBy && stage.approvedBy.length > 0) {
+      stage.approvedBy.forEach((user, uIdx) => {
+        hasRecords = true;
+        rows.push({
+          id: `${stage.stageId}-approved-${uIdx}`,
+          stageId: stage.stageId,
+          stageName: stage.stageName,
+          stageLabel,
+          authorizedUser: user,
+          remark:
+            stage.remarks?.[uIdx] ||
+            stage.remarks?.[0] ||
+            "Approved after verification and compliance check.",
+          status: "Approved",
+          updatedAt: stage.updatedAt,
+          isPending: false,
+        });
+      });
+    }
+
+    if (stage.rejectedBy && stage.rejectedBy.length > 0) {
+      stage.rejectedBy.forEach((user, uIdx) => {
+        hasRecords = true;
+        rows.push({
+          id: `${stage.stageId}-rejected-${uIdx}`,
+          stageId: stage.stageId,
+          stageName: stage.stageName,
+          stageLabel,
+          authorizedUser: user,
+          remark:
+            stage.remarks?.[uIdx] ||
+            stage.remarks?.[0] ||
+            "Rejected due to document non-compliance.",
+          status: "Rejected",
+          updatedAt: stage.updatedAt,
+          isPending: false,
+        });
+      });
+    }
+
+    if (!hasRecords && stage.status === "Approved") {
+      rows.push({
+        id: `${stage.stageId}-approved-fb`,
+        stageId: stage.stageId,
+        stageName: stage.stageName,
+        stageLabel,
+        authorizedUser: "Sunil Jayawardena",
+        remark: stage.remarks?.[0] || "Approved after review",
+        status: "Approved",
+        updatedAt: stage.updatedAt,
+        isPending: false,
+      });
+      hasRecords = true;
+    } else if (!hasRecords && stage.status === "Rejected") {
+      rows.push({
+        id: `${stage.stageId}-rejected-fb`,
+        stageId: stage.stageId,
+        stageName: stage.stageName,
+        stageLabel,
+        authorizedUser: "Review Officer",
+        remark: stage.remarks?.[0] || "Rejected",
+        status: "Rejected",
+        updatedAt: stage.updatedAt,
+        isPending: false,
+      });
+      hasRecords = true;
+    }
+
+    if (stage.status === "Pending") {
+      rows.push({
+        id: `${stage.stageId}-pending`,
+        stageId: stage.stageId,
+        stageName: stage.stageName,
+        stageLabel,
+        authorizedUser: "—",
+        remark: "—",
+        status: "Pending",
+        updatedAt: "—",
+        isPending: true,
+      });
+    }
+  });
+
+  return (
+    <div className="rounded-lg border border-border bg-card overflow-hidden space-y-0">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 bg-muted/40 border-b border-border">
+        <h3 className="text-xs font-semibold text-foreground">Approval Stages</h3>
+
+        {!isReadOnly && activeProcess.overallStatus !== "Rejected" && (
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleOpenAddRow}
+            className="h-7 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            {stage.status}
-          </span>
-          <span className="block font-mono text-[10px] text-muted-foreground mt-1 tabular-nums">
-            Approvals: {stage.approvedBy.length} / {stage.approvalsRequired}
-          </span>
-        </div>
+            <Plus size={13} />
+            <span>Add Row</span>
+          </Button>
+        )}
       </div>
 
-      {stage.approvedBy.length > 0 && (
-        <div className="mt-3 pt-2.5 border-t border-emerald-200/60 text-[11px] text-emerald-900 flex items-center justify-between">
-          <span>
-            <strong>Approved By:</strong> {stage.approvedBy.join(", ")}
-          </span>
-          {stage.updatedAt && (
-            <span className="text-muted-foreground font-mono">{stage.updatedAt}</span>
-          )}
-        </div>
-      )}
+      <div className="overflow-x-auto">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th className="w-56">Stage</th>
+              <th className="w-48">Authorized User</th>
+              <th>Remark</th>
+              <th className="w-28 text-center">Status</th>
+              {!isReadOnly && <th className="w-36 text-center">Action</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id}>
+                <td className="font-medium text-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono text-[10px] text-primary font-semibold">
+                      {row.stageId}
+                    </span>
+                    <span>{row.stageLabel.replace(/^[A-Za-z0-9\s-]+:\s*/, "")}</span>
+                  </div>
+                </td>
+                <td>
+                  {row.isPending ? (
+                    <span className="text-muted-foreground text-xs">—</span>
+                  ) : (
+                    <span className="font-medium text-foreground text-xs">{row.authorizedUser}</span>
+                  )}
+                </td>
+                <td className="text-xs">
+                  {row.isPending ? (
+                    <span className="text-muted-foreground text-xs">—</span>
+                  ) : (
+                    <span className="text-foreground">{row.remark}</span>
+                  )}
+                </td>
+                <td className="text-center">
+                  <span
+                    className={`badge text-[10px] ${
+                      row.status === "Approved"
+                        ? "bg-emerald-100 text-emerald-800"
+                        : row.status === "Rejected"
+                          ? "bg-red-100 text-red-800"
+                          : "pending"
+                    }`}
+                  >
+                    {row.status}
+                  </span>
+                </td>
+                {!isReadOnly && (
+                  <td className="text-center">
+                    {row.isPending ? (
+                      <div className="flex items-center gap-1.5 justify-center">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleQuickAction(row.stageId, "Approved")}
+                          className="h-6 text-[11px] text-emerald-700 border-emerald-300 hover:bg-emerald-50 px-2 gap-1"
+                        >
+                          <CheckCircle2 size={11} /> Approve
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleQuickAction(row.stageId, "Rejected")}
+                          className="h-6 text-[11px] text-destructive border-destructive/30 hover:bg-destructive/10 px-2 gap-1"
+                        >
+                          <XCircle size={11} /> Reject
+                        </Button>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
+                  </td>
+                )}
+              </tr>
+            ))}
 
-      {stage.remarks.length > 0 && (
-        <div className="mt-1 text-[11px] text-muted-foreground italic">
-          &quot;{stage.remarks.join("; ")}&quot;
-        </div>
-      )}
+            {isAddingRow && (
+              <tr className="bg-primary/5 border-t-2 border-b-2 border-primary/30">
+                <td>
+                  <select
+                    value={newStageId}
+                    onChange={(e) => setNewStageId(e.target.value)}
+                    className="grid-input text-xs font-medium w-full"
+                  >
+                    {stages.map((stg, i) => (
+                      <option key={stg.stageId} value={stg.stageId}>
+                        Stage {i + 1}: {stg.stageName} ({stg.status})
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    list="approver-users-datalist"
+                    value={newUser}
+                    onChange={(e) => setNewUser(e.target.value)}
+                    placeholder="Authorized User"
+                    className="grid-input text-xs w-full"
+                  />
+                  <datalist id="approver-users-datalist">
+                    {systemUsers.map((u) => (
+                      <option key={u.id} value={u.name} />
+                    ))}
+                  </datalist>
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    value={newRemark}
+                    onChange={(e) => setNewRemark(e.target.value)}
+                    placeholder="Remark"
+                    className="grid-input text-xs w-full"
+                    autoFocus
+                  />
+                </td>
+                <td className="text-center">
+                  <select
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                    className="grid-input text-xs font-semibold text-center w-full"
+                  >
+                    <option value="Approved">Approved</option>
+                    <option value="Rejected">Rejected</option>
+                  </select>
+                </td>
+                <td className="text-center">
+                  <div className="flex items-center gap-1 justify-center">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleSaveRow}
+                      className="h-7 text-xs bg-emerald-700 hover:bg-emerald-800 text-white px-2.5 gap-1"
+                    >
+                      <Check size={12} /> Save
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsAddingRow(false)}
+                      className="h-7 text-xs px-2"
+                      title="Cancel"
+                    >
+                      <X size={12} />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            )}
 
-      {!isReadOnly && isPending && overallStatus !== "Rejected" && (
-        <div className="mt-3 pt-2.5 border-t border-border flex items-center justify-end gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => onReject(stage.stageId)}
-            className="h-7 text-xs text-destructive hover:bg-destructive/10"
-          >
-            <XCircle size={12} className="mr-1" />
-            <span>Reject Stage</span>
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => onApprove(stage.stageId)}
-            className="h-7 text-xs bg-emerald-700 hover:bg-emerald-800 text-white"
-          >
-            <CheckCircle2 size={12} className="mr-1" />
-            <span>Approve Stage</span>
-          </Button>
-        </div>
-      )}
+            {rows.length === 0 && !isAddingRow && (
+              <tr>
+                <td
+                  colSpan={isReadOnly ? 4 : 5}
+                  className="text-center text-xs text-muted-foreground py-6"
+                >
+                  No approval records found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -419,8 +649,11 @@ export function ApprovalsWorkflowView({ statusMode = "pending" }) {
     ratingMasters,
     criterias,
     evaluations,
+    systemUsers = [],
   } = useWorkspace();
-  const [filterType, setFilterType] = useState("All");
+  const [filterType, setFilterType] = useState(
+    statusMode === "pending" ? "Supplier Registration" : "All",
+  );
   const [selectedProcessId, setSelectedProcessId] = useState("");
   const [authorizerName, setAuthorizerName] = useState("Sunil Jayawardena");
   const [remarkText, setRemarkText] = useState("");
@@ -453,8 +686,13 @@ export function ApprovalsWorkflowView({ statusMode = "pending" }) {
     isMatchingStatus(p.overallStatus, statusMode),
   );
 
+  const effectiveFilterType =
+    statusMode === "pending" && (filterType === "All" || !filterType)
+      ? "Supplier Registration"
+      : filterType;
+
   const filteredProcesses = processesForCurrentStatus.filter((p) =>
-    isMatchingProcessType(p.processType, filterType),
+    isMatchingProcessType(p.processType, effectiveFilterType),
   );
 
   const isReadOnly = statusMode !== "pending";
@@ -462,39 +700,35 @@ export function ApprovalsWorkflowView({ statusMode = "pending" }) {
   const activeProcess =
     filteredProcesses.find((p) => p.id === selectedProcessId) || filteredProcesses[0];
 
-  const handleApprove = (stageId) => {
+  const handleApprove = (stageId, user = authorizerName, remark = remarkText) => {
     if (!activeProcess || isReadOnly) return;
-    if (!authorizerName.trim()) {
-      setFeedback("Please specify authorizer name.");
-      return;
-    }
-    approveStage(activeProcess.id, stageId, authorizerName, remarkText || "Approved after review");
+    const authorizer = (user || authorizerName || "Sunil Jayawardena").trim();
+    approveStage(activeProcess.id, stageId, authorizer, remark || "Approved after review");
     setRemarkText("");
-    setFeedback(`Stage approved successfully by ${authorizerName}.`);
+    setFeedback(`Stage approved successfully by ${authorizer}.`);
   };
 
-  const handleReject = (stageId) => {
+  const handleReject = (stageId, user = authorizerName, remark = remarkText) => {
     if (!activeProcess || isReadOnly) return;
-    if (!authorizerName.trim()) {
-      setFeedback("Please specify authorizer name.");
-      return;
-    }
-    rejectStage(
-      activeProcess.id,
-      stageId,
-      authorizerName,
-      remarkText || "Rejected due to non-compliance",
-    );
+    const authorizer = (user || authorizerName || "Sunil Jayawardena").trim();
+    rejectStage(activeProcess.id, stageId, authorizer, remark || "Rejected due to non-compliance");
     setRemarkText("");
-    setFeedback(`Stage rejected by ${authorizerName}.`);
+    setFeedback(`Stage rejected by ${authorizer}.`);
   };
 
-  const filterTabs = [
-    { key: "All", label: "All Categories" },
-    { key: "Supplier Registration", label: "Supplier Registration" },
-    { key: "Conditions", label: "Conditions" },
-    { key: "Supplier Evaluation", label: "Supplier Evaluation" },
-  ];
+  const filterTabs =
+    statusMode === "pending"
+      ? [
+          { key: "Supplier Registration", label: "Supplier Registration" },
+          { key: "Conditions", label: "Conditions" },
+          { key: "Supplier Evaluation", label: "Supplier Evaluation" },
+        ]
+      : [
+          { key: "All", label: "All Categories" },
+          { key: "Supplier Registration", label: "Supplier Registration" },
+          { key: "Conditions", label: "Conditions" },
+          { key: "Supplier Evaluation", label: "Supplier Evaluation" },
+        ];
 
   const currentTabLabel =
     statusMode === "pending" ? "Pending" : statusMode === "responded" ? "Responded" : "Rejected";
@@ -506,10 +740,10 @@ export function ApprovalsWorkflowView({ statusMode = "pending" }) {
           <div>
             <h2 className="text-sm font-semibold text-foreground">
               {statusMode === "pending"
-                ? "Pending Approvals (Supplier Registration, Conditions & Evaluation)"
+                ? "Pending Approvals"
                 : statusMode === "responded"
-                  ? "Responded Approvals — Approved Records (Viewing Only)"
-                  : "Rejected Approvals — Finalized Disapprovals (Viewing Only)"}
+                  ? "Responded Approvals (Viewing Only)"
+                  : "Rejected Approvals (Viewing Only)"}
             </h2>
           </div>
           <span className="text-xs text-muted-foreground font-mono">
@@ -527,7 +761,7 @@ export function ApprovalsWorkflowView({ statusMode = "pending" }) {
                 key={tab.key}
                 type="button"
                 className="tab-button"
-                data-active={filterType === tab.key}
+                data-active={effectiveFilterType === tab.key}
                 onClick={() => {
                   setFilterType(tab.key);
                   setFeedback("");
@@ -688,7 +922,7 @@ export function ApprovalsWorkflowView({ statusMode = "pending" }) {
                   <div className="flex items-center gap-2">
                     <Layers size={14} className="text-primary" />
                     <strong className="text-xs font-semibold text-foreground">
-                      {activeProcess.processType} Details to Review
+                      {activeProcess.processType} Details
                     </strong>
                   </div>
                   <Button
@@ -729,64 +963,15 @@ export function ApprovalsWorkflowView({ statusMode = "pending" }) {
                 )}
               </div>
 
-              {/* Authorizer Action Panel: Only shown in Pending Approvals */}
-              {!isReadOnly && (
-                <div className="p-4 rounded-lg bg-muted/40 border border-border space-y-3">
-                  <div className="flex items-center justify-between">
-                    <strong className="text-xs font-medium text-foreground flex items-center gap-1.5">
-                      <ShieldCheck size={14} className="text-primary" />
-                      <span>Authorizer Action Panel</span>
-                    </strong>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <div>
-                      <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-                        Authorizer User
-                      </label>
-                      <input
-                        type="text"
-                        value={authorizerName}
-                        onChange={(e) => setAuthorizerName(e.target.value)}
-                        placeholder="e.g. Sunil Jayawardena"
-                        className="w-full bg-background border border-input rounded px-2.5 py-1.5 text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-                        Evaluation Remark / Sign-Off Note
-                      </label>
-                      <input
-                        type="text"
-                        value={remarkText}
-                        onChange={(e) => setRemarkText(e.target.value)}
-                        placeholder="e.g. VAT certificate verified with Inland Revenue"
-                        className="w-full bg-background border border-input rounded px-2.5 py-1.5 text-xs"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-4">
-                <h3 className="text-xs font-semibold text-foreground">
-                  Approval Stages ({activeProcess.stages.length} Stages)
-                </h3>
-
-                <div className="space-y-3">
-                  {activeProcess.stages.map((stage, idx) => (
-                    <ApprovalStageExecutionCard
-                      key={stage.stageId}
-                      stage={stage}
-                      idx={idx}
-                      overallStatus={activeProcess.overallStatus}
-                      onApprove={handleApprove}
-                      onReject={handleReject}
-                      isReadOnly={isReadOnly}
-                    />
-                  ))}
-                </div>
-              </div>
+              <ApprovalWorkflowGrid
+                activeProcess={activeProcess}
+                isReadOnly={isReadOnly}
+                systemUsers={systemUsers}
+                authorizerName={authorizerName}
+                onApprove={handleApprove}
+                onReject={handleReject}
+                onSuccessNotice={(msg) => setFeedback(msg)}
+              />
             </div>
           </div>
         ) : (

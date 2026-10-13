@@ -25,7 +25,24 @@ function createBlankTemplate(nextId) {
     stageIds: [],
   };
 }
-function AuthorizedAreasSelector({ selectedSections, onToggleArea, onSelectAll, onClearAll }) {
+function AuthorizedAreasSelector({
+  selectedSections,
+  onToggleArea,
+  onSelectAll,
+  onClearAll,
+  templates = [],
+  editingTemplateId = null,
+}) {
+  const getUsedByTemplate = (areaName) => {
+    return templates.find(
+      (t) =>
+        t.id !== editingTemplateId &&
+        (t.authorizedSections ?? []).includes(areaName),
+    );
+  };
+
+  const availableAreas = authorizedAreasList.filter((area) => !getUsedByTemplate(area.name));
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-end text-xs text-muted-foreground pb-2">
@@ -33,7 +50,12 @@ function AuthorizedAreasSelector({ selectedSections, onToggleArea, onSelectAll, 
           <button
             type="button"
             onClick={onSelectAll}
-            className="text-primary hover:underline text-[11px]"
+            disabled={availableAreas.length === 0}
+            className={`text-[11px] ${
+              availableAreas.length === 0
+                ? "text-muted-foreground cursor-not-allowed opacity-50"
+                : "text-primary hover:underline"
+            }`}
           >
             Select all
           </button>
@@ -50,19 +72,36 @@ function AuthorizedAreasSelector({ selectedSections, onToggleArea, onSelectAll, 
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 py-1">
         {authorizedAreasList.map((area) => {
+          const usedBy = getUsedByTemplate(area.name);
+          const isUsedByOther = Boolean(usedBy);
           const isChecked = selectedSections.includes(area.name);
+
           return (
             <label
               key={area.id}
-              className="flex items-center gap-2.5 text-xs text-foreground cursor-pointer select-none py-1"
+              className={`flex items-center gap-2.5 text-xs select-none py-2 px-3 rounded border transition-colors ${
+                isUsedByOther
+                  ? "border-border/60 bg-muted/20 opacity-60 cursor-not-allowed text-muted-foreground"
+                  : isChecked
+                    ? "border-primary/40 bg-primary/5 text-foreground cursor-pointer font-medium"
+                    : "border-border bg-card text-foreground cursor-pointer hover:bg-muted/30"
+              }`}
+              title={isUsedByOther ? `Assigned to ${usedBy.name} (${usedBy.id})` : undefined}
             >
               <input
                 type="checkbox"
                 checked={isChecked}
-                onChange={() => onToggleArea(area.name)}
-                className="w-4 h-4 rounded text-primary focus:ring-primary shrink-0"
+                disabled={isUsedByOther}
+                onChange={() => {
+                  if (!isUsedByOther) {
+                    onToggleArea(area.name);
+                  }
+                }}
+                className="w-4 h-4 rounded text-primary focus:ring-primary shrink-0 accent-primary disabled:opacity-50 disabled:cursor-not-allowed"
               />
-              <span className="font-medium">{area.name}</span>
+              <span className={isChecked ? "font-semibold" : "font-medium"}>
+                {area.name}
+              </span>
             </label>
           );
         })}
@@ -174,7 +213,13 @@ function TemplateStagesSelectionGrid({
     </div>
   );
 }
-function AllApprovalTemplatesTable({ templates, stages, editingTemplateId, onEdit }) {
+function AllApprovalTemplatesTable({
+  templates,
+  stages,
+  editingTemplateId,
+  onEdit,
+  onDelete,
+}) {
   return (
     <div className="rounded-lg border border-border bg-card p-6 space-y-4">
       <div className="flex items-center justify-between pb-3 border-b border-border">
@@ -192,10 +237,11 @@ function AllApprovalTemplatesTable({ templates, stages, editingTemplateId, onEdi
             <tr>
               <th className="w-24">Template ID</th>
               <th>Template Name</th>
+              <th>Authorized Areas</th>
               <th>Description</th>
               <th>Included Stages</th>
               <th className="w-20 text-center">Active</th>
-              <th className="w-24 text-center">Action</th>
+              <th className="w-28 text-center">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -203,10 +249,27 @@ function AllApprovalTemplatesTable({ templates, stages, editingTemplateId, onEdi
               const stageNames = tmpl.stageIds
                 .map((sid) => stages.find((s) => s.id === sid)?.name ?? sid)
                 .join(" → ");
+              const assignedAreas = tmpl.authorizedSections ?? [];
+
               return (
                 <tr key={tmpl.id} className={editingTemplateId === tmpl.id ? "bg-primary/5" : ""}>
                   <td className="font-mono text-[10px] text-primary font-medium">{tmpl.id}</td>
                   <td className="font-medium text-foreground">{tmpl.name}</td>
+                  <td>
+                    <div className="flex flex-wrap gap-1">
+                      {assignedAreas.map((area) => (
+                        <span
+                          key={area}
+                          className="badge text-[10px] bg-primary/10 text-primary border-primary/20 font-semibold"
+                        >
+                          {area}
+                        </span>
+                      ))}
+                      {assignedAreas.length === 0 && (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </div>
+                  </td>
                   <td className="text-xs text-muted-foreground max-w-xs truncate">
                     {tmpl.description}
                   </td>
@@ -226,21 +289,34 @@ function AllApprovalTemplatesTable({ templates, stages, editingTemplateId, onEdi
                     />
                   </td>
                   <td className="text-center">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onEdit(tmpl)}
-                      className="h-6 text-[11px] px-2.5"
-                    >
-                      Edit
-                    </Button>
+                    <div className="flex items-center gap-1.5 justify-center">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onEdit(tmpl)}
+                        className="h-6 text-[11px] px-2.5"
+                      >
+                        Edit
+                      </Button>
+                      {templates.length > 1 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onDelete(tmpl.id, tmpl.name)}
+                          className="h-6 text-[11px] px-2 text-destructive hover:bg-destructive/10"
+                          title="Delete template"
+                        >
+                          <Trash2 size={12} />
+                        </Button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );
             })}
             {templates.length === 0 && (
               <tr>
-                <td colSpan={6} className="text-center text-xs text-muted-foreground py-6">
+                <td colSpan={7} className="text-center text-xs text-muted-foreground py-6">
                   No templates configured yet.
                 </td>
               </tr>
@@ -252,23 +328,31 @@ function AllApprovalTemplatesTable({ templates, stages, editingTemplateId, onEdi
   );
 }
 export function ApprovalTemplateTab() {
-  const { templates, stages, saveTemplate } = useWorkspace();
+  const { templates, stages, saveTemplate, deleteTemplate } = useWorkspace();
   const [editingTemplateId, setEditingTemplateId] = useState(null);
   const [childTab, setChildTab] = useState("areas");
   const [form, setForm] = useState(() => createBlankTemplate(getNextTemplateId(templates)));
   const [notice, setNotice] = useState("");
+
   const handleEdit = (tmpl) => {
     setEditingTemplateId(tmpl.id);
     setForm({
       ...tmpl,
-      authorizedSections:
-        tmpl.authorizedSections && tmpl.authorizedSections.length > 0
-          ? tmpl.authorizedSections
-          : ["Supplier Registration", "Supplier Evaluation"],
+      authorizedSections: tmpl.authorizedSections ? [...tmpl.authorizedSections] : [],
     });
-    setNotice(`Loaded template "${tmpl.name}" for editing.`);
+    setNotice(`Loaded template "${tmpl.name}" (${tmpl.id}) for editing.`);
   };
+
   const handleToggleArea = (areaName) => {
+    const usedBy = templates.find(
+      (t) => t.id !== editingTemplateId && (t.authorizedSections ?? []).includes(areaName),
+    );
+    if (usedBy) {
+      setNotice(
+        `The area "${areaName}" is already assigned to template "${usedBy.name}" (${usedBy.id}). An area cannot be used across multiple templates.`,
+      );
+      return;
+    }
     const current = form.authorizedSections ?? [];
     const exists = current.includes(areaName);
     setForm({
@@ -276,6 +360,30 @@ export function ApprovalTemplateTab() {
       authorizedSections: exists ? current.filter((a) => a !== areaName) : [...current, areaName],
     });
   };
+
+  const handleSelectAll = () => {
+    const available = authorizedAreasList
+      .filter(
+        (area) =>
+          !templates.some(
+            (t) => t.id !== editingTemplateId && (t.authorizedSections ?? []).includes(area.name),
+          ),
+      )
+      .map((a) => a.name);
+
+    if (available.length === 0) {
+      setNotice(
+        "All authorized areas are already assigned to existing templates. Edit an existing template to modify its assigned areas.",
+      );
+      return;
+    }
+
+    setForm({
+      ...form,
+      authorizedSections: available,
+    });
+  };
+
   const handleAddStageRow = () => {
     const availableStage = stages.find((s) => !form.stageIds.includes(s.id)) ?? stages[0];
     if (!availableStage) return;
@@ -284,6 +392,7 @@ export function ApprovalTemplateTab() {
       stageIds: [...prev.stageIds, availableStage.id],
     }));
   };
+
   const handleSelectStageAt = (index, newStageId) => {
     setForm((prev) => {
       const nextIds = [...prev.stageIds];
@@ -294,12 +403,23 @@ export function ApprovalTemplateTab() {
       };
     });
   };
+
   const handleRemoveStageRow = (index) => {
     setForm((prev) => ({
       ...prev,
       stageIds: prev.stageIds.filter((_, idx) => idx !== index),
     }));
   };
+
+  const handleDelete = (id, name) => {
+    if (editingTemplateId === id) {
+      setEditingTemplateId(null);
+      setForm(createBlankTemplate(getNextTemplateId(templates)));
+    }
+    deleteTemplate(id);
+    setNotice(`Template "${name}" (${id}) removed. Its assigned areas are now freed up.`);
+  };
+
   const handleSave = () => {
     if (!form.name.trim()) {
       setNotice("Please enter a template name.");
@@ -315,6 +435,30 @@ export function ApprovalTemplateTab() {
       setNotice("Please select at least one stage in the Stages tab.");
       return;
     }
+
+    // Strict validation: an area can only belong to one template
+    const conflictingAreas = (form.authorizedSections ?? []).filter((areaName) =>
+      templates.some(
+        (t) => t.id !== form.id && (t.authorizedSections ?? []).includes(areaName),
+      ),
+    );
+
+    if (conflictingAreas.length > 0) {
+      const conflictDetails = conflictingAreas
+        .map((areaName) => {
+          const usedBy = templates.find(
+            (t) => t.id !== form.id && (t.authorizedSections ?? []).includes(areaName),
+          );
+          return `"${areaName}" (assigned to ${usedBy?.name || usedBy?.id})`;
+        })
+        .join("; ");
+
+      setNotice(
+        `Cannot save template: The following area(s) are already used in another template: ${conflictDetails}. An area cannot be used across multiple templates.`,
+      );
+      return;
+    }
+
     const updatedTemplates = templates.some((t) => t.id === form.id)
       ? templates.map((t) => (t.id === form.id ? form : t))
       : [...templates, form];
@@ -323,6 +467,7 @@ export function ApprovalTemplateTab() {
     setForm(createBlankTemplate(getNextTemplateId(updatedTemplates)));
     setNotice(`Approval template "${form.name}" saved successfully!`);
   };
+
   return (
     <div className="space-y-6">
       <div className="rounded-lg border border-border bg-card p-6 space-y-5">
@@ -339,7 +484,7 @@ export function ApprovalTemplateTab() {
         {notice && (
           <div
             className={`p-3 rounded text-xs ${
-              notice.includes("successfully")
+              notice.includes("successfully") || notice.includes("removed")
                 ? "bg-emerald-50 border border-emerald-300 text-emerald-800"
                 : "bg-amber-50 border border-amber-300 text-amber-800"
             }`}
@@ -352,7 +497,7 @@ export function ApprovalTemplateTab() {
           <Field label="Template Name" required>
             <input
               type="text"
-              placeholder="e.g. Standard Supplier Onboarding Template"
+              placeholder="e.g. Conditions & Supplier Evaluation Approval Template"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="w-full"
@@ -409,18 +554,15 @@ export function ApprovalTemplateTab() {
             <AuthorizedAreasSelector
               selectedSections={form.authorizedSections ?? []}
               onToggleArea={handleToggleArea}
-              onSelectAll={() =>
-                setForm({
-                  ...form,
-                  authorizedSections: authorizedAreasList.map((a) => a.name),
-                })
-              }
+              onSelectAll={handleSelectAll}
               onClearAll={() =>
                 setForm({
                   ...form,
                   authorizedSections: [],
                 })
               }
+              templates={templates}
+              editingTemplateId={editingTemplateId}
             />
           )}
 
@@ -448,6 +590,7 @@ export function ApprovalTemplateTab() {
         stages={stages}
         editingTemplateId={editingTemplateId}
         onEdit={handleEdit}
+        onDelete={handleDelete}
       />
     </div>
   );

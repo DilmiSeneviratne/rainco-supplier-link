@@ -89,10 +89,7 @@ function parseConditionFields(r) {
 
 function formatConditionLabel(r, mode = "range") {
   if (mode === "text") {
-    const text = (r.textVal ?? r.condition ?? "").trim();
-    const op = (r.operator ?? "=").trim();
-    if (op === "=") return text;
-    return `${op} "${text}"`;
+    return (r.textVal ?? r.condition ?? "").trim();
   }
   const from = (r.fromVal ?? "").trim();
   const op = (r.operator ?? "=").trim();
@@ -390,8 +387,7 @@ function SubCriteriaConditionsPanel({
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Expected Text / Pattern</th>
-                    <th className="w-36 text-center">Condition</th>
+                    <th>Text</th>
                     <th className="w-28 text-right">Marks</th>
                     <th className="w-14 text-center">Action</th>
                   </tr>
@@ -401,36 +397,19 @@ function SubCriteriaConditionsPanel({
                     const parsed = parseConditionFields(condRow);
                     const textVal =
                       condRow.textVal !== undefined ? condRow.textVal : parsed.textVal;
-                    const operator =
-                      condRow.operator !== undefined ? condRow.operator : parsed.operator || "=";
 
                     return (
                       <tr key={condRow.id}>
                         <td>
                           <input
                             type="text"
-                            placeholder="e.g. ISO 9001 Certified, Approved, Compliant"
+                            placeholder="Enter text value (e.g. ISO 9001 Certified, Approved, etc.)"
                             value={textVal ?? ""}
                             onChange={(e) =>
                               onConditionChange(sub.id, condRow.id, "textVal", e.target.value)
                             }
                             className="grid-input text-xs w-full"
                           />
-                        </td>
-                        <td className="text-center">
-                          <select
-                            value={operator || "="}
-                            onChange={(e) =>
-                              onConditionChange(sub.id, condRow.id, "operator", e.target.value)
-                            }
-                            className="grid-input text-xs text-center w-full min-w-[95px] font-medium"
-                          >
-                            <option value="=">= (Exact)</option>
-                            <option value="!=">!= (Not Equal)</option>
-                            <option value="Contains">Contains</option>
-                            <option value="Starts With">Starts With</option>
-                            <option value="Matches">Matches</option>
-                          </select>
                         </td>
                         <td className="text-right">
                           <input
@@ -454,7 +433,7 @@ function SubCriteriaConditionsPanel({
                             type="button"
                             onClick={() => onRemoveConditionRow(sub.id, condRow.id)}
                             className="p-1 hover:text-destructive text-muted-foreground transition-colors"
-                            title="Remove condition row"
+                            title="Remove text row"
                           >
                             <Trash2 size={13} />
                           </button>
@@ -464,8 +443,8 @@ function SubCriteriaConditionsPanel({
                   })}
                   {conditionRows.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="text-center text-xs text-muted-foreground py-3">
-                        No text condition rows added. Click &quot;Add Condition&quot; to add a row.
+                      <td colSpan={3} className="text-center text-xs text-muted-foreground py-3">
+                        No text rows added. Click &quot;Add Condition&quot; to add a text row.
                       </td>
                     </tr>
                   )}
@@ -724,7 +703,6 @@ export function RatingsMaster() {
         ? {
             id: `RC-${Date.now()}-${currentRows.length + 1}`,
             textVal: "",
-            operator: "=",
             condition: "",
             marks: 0,
           }
@@ -812,10 +790,11 @@ export function RatingsMaster() {
             list.length > 0
               ? list.map((item) => {
                   const parsed = parseConditionFields(item);
+                  const text = item.textVal ?? parsed.textVal ?? item.condition ?? "";
                   return {
                     ...item,
-                    textVal: item.textVal ?? parsed.textVal,
-                    operator: item.operator ?? parsed.operator ?? "=",
+                    textVal: text,
+                    condition: text,
                     marks: item.marks ?? 0,
                   };
                 })
@@ -823,7 +802,6 @@ export function RatingsMaster() {
                   {
                     id: `RC-${Date.now()}-${sub.id}-1`,
                     textVal: "",
-                    operator: "=",
                     condition: "",
                     marks: 0,
                   },
@@ -902,12 +880,11 @@ export function RatingsMaster() {
       } else if (mode === "text") {
         cleanedRatings[subId] = rows
           .map((r) => {
-            const formatted = formatConditionLabel(r, "text");
+            const text = (r.textVal ?? r.condition ?? "").trim();
             return {
               id: r.id,
-              textVal: r.textVal ?? "",
-              operator: r.operator ?? "=",
-              condition: formatted || r.condition || "",
+              textVal: text,
+              condition: text,
               marks: Number(r.marks) || 0,
             };
           })
