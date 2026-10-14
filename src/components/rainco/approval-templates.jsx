@@ -35,9 +35,7 @@ function AuthorizedAreasSelector({
 }) {
   const getUsedByTemplate = (areaName) => {
     return templates.find(
-      (t) =>
-        t.id !== editingTemplateId &&
-        (t.authorizedSections ?? []).includes(areaName),
+      (t) => t.id !== editingTemplateId && (t.authorizedSections ?? []).includes(areaName),
     );
   };
 
@@ -99,9 +97,7 @@ function AuthorizedAreasSelector({
                 }}
                 className="w-4 h-4 rounded text-primary focus:ring-primary shrink-0 accent-primary disabled:opacity-50 disabled:cursor-not-allowed"
               />
-              <span className={isChecked ? "font-semibold" : "font-medium"}>
-                {area.name}
-              </span>
+              <span className={isChecked ? "font-semibold" : "font-medium"}>{area.name}</span>
             </label>
           );
         })}
@@ -213,13 +209,7 @@ function TemplateStagesSelectionGrid({
     </div>
   );
 }
-function AllApprovalTemplatesTable({
-  templates,
-  stages,
-  editingTemplateId,
-  onEdit,
-  onDelete,
-}) {
+function AllApprovalTemplatesTable({ templates, stages, editingTemplateId, onEdit, onDelete }) {
   return (
     <div className="rounded-lg border border-border bg-card p-6 space-y-4">
       <div className="flex items-center justify-between pb-3 border-b border-border">
@@ -438,9 +428,7 @@ export function ApprovalTemplateTab() {
 
     // Strict validation: an area can only belong to one template
     const conflictingAreas = (form.authorizedSections ?? []).filter((areaName) =>
-      templates.some(
-        (t) => t.id !== form.id && (t.authorizedSections ?? []).includes(areaName),
-      ),
+      templates.some((t) => t.id !== form.id && (t.authorizedSections ?? []).includes(areaName)),
     );
 
     if (conflictingAreas.length > 0) {

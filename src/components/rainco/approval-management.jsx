@@ -3,6 +3,8 @@ export { ApprovalTemplatePage, ApprovalTemplateTab } from "./approval-templates"
 export {
   SupplierApprovalQueuePage,
   SupplierApprovalQueueTab,
+  ApprovedApprovalsPage,
+  ApprovedApprovalsTab,
   RespondedApprovalsPage,
   RespondedApprovalsTab,
   RejectedApprovalsPage,

@@ -83,7 +83,7 @@ function EvaluationCriteriaTreeCard({
             Evaluation Tutorials Tree ({selectedRating.code} · {selectedRating.name})
           </h3>
           <p className="text-[11px] text-muted-foreground">
-            Loaded tutorials, scores, and condition marks configured for the selected condition.
+            Loaded tutorials and scores configured for the selected condition.
           </p>
         </div>
         <div className="inline-flex items-center gap-3 text-xs">
@@ -199,7 +199,7 @@ function EvaluationCriteriaTreeCard({
                                     >
                                       {conditions.map((c) => (
                                         <option key={c.id} value={c.id}>
-                                          {c.condition || "Default"} ({c.marks} marks)
+                                          {c.condition || "Default"}
                                         </option>
                                       ))}
                                     </select>
@@ -560,7 +560,7 @@ export function Evaluation() {
               subCriteriaEntries,
             });
             setMessage(
-              `Evaluation ${created.id} submitted for ${selectedSupplier}. Supplier Master Data rating automatically updated to ${percentage}% (${totalMarks} / ${totalScore}) and sent to the Approval Queue.`,
+              `Evaluation ${created.id} submitted for ${selectedSupplier}. Supplier Master Data rating automatically updated to ${percentage}% (${totalMarks} / ${totalScore}) and sent to Pending Approvals.`,
             );
           }}
         >

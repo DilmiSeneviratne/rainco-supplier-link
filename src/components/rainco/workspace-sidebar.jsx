@@ -58,7 +58,7 @@ export const approvalsNav = [
   { to: "/approval-stages", label: "Approval Stages", icon: Layers },
   { to: "/approval-template", label: "Approval Template", icon: ListOrdered },
   { to: "/approval-queue", label: "Pending Approvals", icon: UserCheck },
-  { to: "/responded-approvals", label: "Responded Approvals", icon: CheckCircle2 },
+  { to: "/responded-approvals", label: "Approved Approvals", icon: CheckCircle2 },
   { to: "/rejected-approvals", label: "Rejected Approvals", icon: XCircle },
 ];
 export const evaluationNav = [

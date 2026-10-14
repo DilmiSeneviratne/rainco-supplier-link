@@ -181,6 +181,8 @@ const fallbackWorkspaceContext = {
     approvalStatus: "Pending Approval",
   }),
   updateSupplierMasterStatus: () => {},
+  currentUser: initialSystemUsers[0],
+  setCurrentUser: () => {},
 };
 export function useWorkspace() {
   const context = useContext(WorkspaceContext);
@@ -203,6 +205,7 @@ export function WorkspaceProvider({ children }) {
   const [lastRegistrationNotice, setLastRegistrationNotice] = useState(null);
   const [stages, setStages] = useState(initialStages);
   const [templates, setTemplates] = useState(initialTemplates);
+  const [currentUser, setCurrentUser] = useState(initialSystemUsers[0]);
   const [approvalProcesses, setApprovalProcesses] = useState(initialProcesses);
   const [evaluations, setEvaluations] = useState(initialEvaluations);
   const createApprovalProcessForSection = (processType, targetId, title, subtitle) => {
@@ -436,7 +439,15 @@ export function WorkspaceProvider({ children }) {
       if (prev[userToSave.id]) return prev;
       return {
         ...prev,
-        [userToSave.id]: ["Supplier Checklist", "Approval Queue", "Evaluation Sheet"],
+        [userToSave.id]: [
+          "Supplier Checklist",
+          "Pending Approvals",
+          "Approved Approvals",
+          "Responded Approvals",
+          "Rejected Approvals",
+          "Approval Queue",
+          "Evaluation Sheet",
+        ],
       };
     });
   };
@@ -488,34 +499,30 @@ export function WorkspaceProvider({ children }) {
             updatedAt: nowStr,
           };
         });
-        const allApproved = updatedStages.every((s) => s.status === "Approved");
-        const nextStageIdx = updatedStages.findIndex((s) => s.status === "Pending");
-        if (allApproved) {
-          if (proc.processType === "Supplier Registration") {
-            setSupplier((s) => (s.name === proc.supplierName ? { ...s, status: "Active" } : s));
-            setSuppliersList((list) =>
-              list.map((s) => (s.name === proc.supplierName ? { ...s, status: "Active" } : s)),
-            );
-          } else if (
-            (proc.processType === "Ratings" || proc.processType === "Conditions") &&
-            proc.targetId
-          ) {
-            setRatingMasters((list) =>
-              list.map((r) => (r.id === proc.targetId ? { ...r, approvalStatus: "Approved" } : r)),
-            );
-          } else if (proc.processType === "Supplier Evaluation" && proc.targetId) {
-            setEvaluations((list) =>
-              list.map((ev) =>
-                ev.id === proc.targetId ? { ...ev, approvalStatus: "Approved" } : ev,
-              ),
-            );
-          }
+        if (proc.processType === "Supplier Registration") {
+          setSupplier((s) => (s.name === proc.supplierName ? { ...s, status: "Active" } : s));
+          setSuppliersList((list) =>
+            list.map((s) => (s.name === proc.supplierName ? { ...s, status: "Active" } : s)),
+          );
+        } else if (
+          (proc.processType === "Ratings" || proc.processType === "Conditions") &&
+          proc.targetId
+        ) {
+          setRatingMasters((list) =>
+            list.map((r) => (r.id === proc.targetId ? { ...r, approvalStatus: "Approved" } : r)),
+          );
+        } else if (proc.processType === "Supplier Evaluation" && proc.targetId) {
+          setEvaluations((list) =>
+            list.map((ev) =>
+              ev.id === proc.targetId ? { ...ev, approvalStatus: "Approved" } : ev,
+            ),
+          );
         }
         return {
           ...proc,
           stages: updatedStages,
           currentStageIndex: nextStageIdx === -1 ? updatedStages.length : nextStageIdx,
-          overallStatus: allApproved ? "Approved" : "Pending Approval",
+          overallStatus: "Approved",
         };
       }),
     );
@@ -600,6 +607,9 @@ export function WorkspaceProvider({ children }) {
       (u) => u.username.toLowerCase() === trimmed || u.email.toLowerCase() === trimmed,
     );
     const resolvedRole = loginRole ?? (matchedRaincoUser ? "rainco" : "supplier");
+    if (matchedRaincoUser) {
+      setCurrentUser(matchedRaincoUser);
+    }
     setIsLoggedIn(true);
     setRole(resolvedRole);
     return true;
@@ -660,6 +670,8 @@ export function WorkspaceProvider({ children }) {
         evaluations,
         submitEvaluationForApproval,
         updateSupplierMasterStatus,
+        currentUser,
+        setCurrentUser,
       }}
     >
       <ThemeProvider theme={raincoMuiTheme}>{children}</ThemeProvider>

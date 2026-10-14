@@ -9,7 +9,7 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import { LogIn, LogOut, Mail, Menu } from "lucide-react";
+import { LogIn, LogOut, Mail, Menu, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useWorkspace } from "./workspace-context";
 import { RaincoLogo } from "./workspace-ui";
@@ -21,7 +21,7 @@ function getBreadcrumbLabel(pathname) {
   if (pathname === "/approval-stages") return "Approvals / Approval Stages";
   if (pathname === "/approval-template") return "Approvals / Approval Template";
   if (pathname === "/approval-queue") return "Approvals / Pending Approvals";
-  if (pathname === "/responded-approvals") return "Approvals / Responded Approvals";
+  if (pathname === "/responded-approvals") return "Approvals / Approved Approvals";
   if (pathname === "/rejected-approvals") return "Approvals / Rejected Approvals";
   if (pathname === "/checklist") return "Masters / Supplier Checklist";
   if (pathname === "/supplier-types") return "Masters / Supplier Types";
@@ -41,7 +41,7 @@ function getBreadcrumbLabel(pathname) {
   return found?.label ?? "Overview";
 }
 export function WorkspaceTopBar({ pathname, onOpenMobileMenu }) {
-  const { role, isLoggedIn, logout } = useWorkspace();
+  const { role, isLoggedIn, logout, currentUser } = useWorkspace();
   const router = useRouter();
   return (
     <AppBar
@@ -105,6 +105,37 @@ export function WorkspaceTopBar({ pathname, onOpenMobileMenu }) {
         </Stack>
 
         <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexShrink: 0 }}>
+          {isLoggedIn && role === "rainco" && currentUser && (
+            <Box
+              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 0.75,
+                px: 1.25,
+                py: 0.4,
+                borderRadius: 2,
+                bgcolor: "rgba(0,0,0,0.03)",
+                border: "1px solid rgba(0,0,0,0.08)",
+                fontSize: "11px",
+              }}
+            >
+              <UserCheck size={13} className="text-primary" />
+              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "11px" }}>
+                {currentUser.fullName}
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "text.secondary",
+                  fontSize: "10.5px",
+                  display: { xs: "none", md: "inline" },
+                }}
+              >
+                ({currentUser.department})
+              </Typography>
+            </Box>
+          )}
+
           <Chip
             component={Link}
             to="/register"

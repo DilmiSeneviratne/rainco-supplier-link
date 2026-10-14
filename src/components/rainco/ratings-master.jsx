@@ -926,7 +926,7 @@ export function RatingsMaster() {
     setSubCriteriaWeights(createInitialSubCriteriaWeights(criterias));
     setSubCriteriaRatings(createInitialSubCriteriaRatings(criterias));
     setNotice({
-      text: `Condition "${trimmedName}" (${codeToSave}) saved and sent to the Approval Queue for verification.`,
+      text: `Condition "${trimmedName}" (${codeToSave}) saved and sent to Pending Approvals for verification.`,
     });
   };
   const selectedMainCriterias = criterias.filter((c) => selectedCriteriaIds.includes(c.id));

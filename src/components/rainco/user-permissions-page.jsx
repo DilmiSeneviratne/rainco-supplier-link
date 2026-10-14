@@ -29,7 +29,13 @@ const permissionTreeGroups = [
     id: "approvals",
     label: "Approvals",
     icon: UserCheck,
-    tabs: ["Approval Stages", "Approval Template", "Approval Queue"],
+    tabs: [
+      "Approval Stages",
+      "Approval Template",
+      "Pending Approvals",
+      "Approved Approvals",
+      "Rejected Approvals",
+    ],
   },
   {
     id: "evaluation",
@@ -54,7 +60,15 @@ function normalizeUserPermEntry(rawEntry) {
     const map = {};
     for (const tabName of allSystemTabs) {
       const enabled =
-        rawEntry.includes(tabName) || (tabName === "Tutorials" && rawEntry.includes("Criterias"));
+        rawEntry.includes(tabName) ||
+        (tabName === "Tutorials" && rawEntry.includes("Criterias")) ||
+        (tabName === "Pending Approvals" && rawEntry.includes("Approval Queue")) ||
+        (tabName === "Approved Approvals" &&
+          (rawEntry.includes("Approved Approvals") ||
+            rawEntry.includes("Responded Approvals") ||
+            rawEntry.includes("Approval Queue"))) ||
+        (tabName === "Responded Approvals" && rawEntry.includes("Approval Queue")) ||
+        (tabName === "Rejected Approvals" && rawEntry.includes("Approval Queue"));
       map[tabName] = {
         access: enabled,
         view: enabled,
