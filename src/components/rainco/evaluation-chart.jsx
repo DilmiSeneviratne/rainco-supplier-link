@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { AccessNotice, PageHeading, useWorkspace } from "./workspace";
 import { Field } from "./registration";
+
 function EvaluationBubbleChartCanvas({ chartData }) {
   return (
     <div
@@ -214,10 +215,13 @@ function EvaluationBubbleChartCanvas({ chartData }) {
     </div>
   );
 }
+
 export function EvaluationChartPage() {
   const { role, suppliersList, evaluations } = useWorkspace();
   const [filterSupplier, setFilterSupplier] = useState("ALL");
+
   if (role !== "rainco") return <AccessNotice audience="rainco" />;
+
   const getGradeInfo = (rating) => {
     if (rating >= 85) {
       return { grade: "A", gradId: "url(#bubbleGradA)", color: "#16a34a" };
@@ -233,6 +237,7 @@ export function EvaluationChartPage() {
     }
     return { grade: "E", gradId: "url(#bubbleGradE)", color: "#1f2937" };
   };
+
   const chartData = suppliersList
     .filter((s) => (filterSupplier === "ALL" ? true : s.name === filterSupplier))
     .map((s) => {
@@ -267,6 +272,7 @@ export function EvaluationChartPage() {
         evaluationResults: evalResults,
       };
     });
+
   return (
     <>
       <PageHeading eyebrow="RAINCO PROCUREMENT" title="Evaluation Chart" />

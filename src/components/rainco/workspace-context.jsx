@@ -363,6 +363,7 @@ export function WorkspaceProvider({ children }) {
               evaluationPercentage: newEval.percentage,
               feasibilityScore: newEval.feasibilityScore,
               desirabilityScore: newEval.desirabilityScore,
+              criteriaScore: newEval.criteriaScore,
               evaluationPeriod: periodText,
             }
           : s,
@@ -379,6 +380,7 @@ export function WorkspaceProvider({ children }) {
             evaluationPercentage: newEval.percentage,
             feasibilityScore: newEval.feasibilityScore,
             desirabilityScore: newEval.desirabilityScore,
+            criteriaScore: newEval.criteriaScore,
             evaluationPeriod: periodText,
           }
         : prev,

@@ -420,6 +420,25 @@ export function Evaluation() {
     desirabilityTotalScore > 0
       ? Math.round((desirabilityTotalMarks / desirabilityTotalScore) * 100)
       : percentage;
+  const criteriaMainCriterias = activeMainCriterias.filter(
+    (m) =>
+      m.criteriaType?.toLowerCase() === "criteria" ||
+      !["feasibility", "desirability", "category", "performance"].includes(
+        m.criteriaType?.toLowerCase() ?? "",
+      ),
+  );
+  const criteriaTotalScore = criteriaMainCriterias.reduce(
+    (sum, main) => sum + main.subCriterias.reduce((s, sub) => s + getSubScore(sub.id), 0),
+    0,
+  );
+  const criteriaTotalMarks = criteriaMainCriterias.reduce(
+    (sum, main) => sum + main.subCriterias.reduce((s, sub) => s + getSubMarks(sub.id), 0),
+    0,
+  );
+  const criteriaScore =
+    criteriaTotalScore > 0
+      ? Math.round((criteriaTotalMarks / criteriaTotalScore) * 100)
+      : percentage;
   const toggleExpandMain = (mainId) => {
     setExpandedMainIds((prev) => ({
       ...prev,
@@ -556,6 +575,7 @@ export function Evaluation() {
               percentage,
               feasibilityScore,
               desirabilityScore,
+              criteriaScore,
               remark,
               subCriteriaEntries,
             });

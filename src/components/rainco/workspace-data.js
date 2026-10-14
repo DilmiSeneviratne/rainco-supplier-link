@@ -410,6 +410,7 @@ export const initialSupplier = {
   evaluationPercentage: 74,
   feasibilityScore: 68,
   desirabilityScore: 80,
+  criteriaScore: 74,
   evaluationPeriod: "2023-01-01 to 2023-04-30",
 };
 export const initialSuppliersList = [
@@ -435,6 +436,7 @@ export const initialSuppliersList = [
     evaluationPercentage: 62,
     feasibilityScore: 56,
     desirabilityScore: 68,
+    criteriaScore: 62,
     evaluationPeriod: "2023-01-01 to 2023-04-30",
   },
   {
@@ -458,6 +460,7 @@ export const initialSuppliersList = [
     evaluationPercentage: 80,
     feasibilityScore: 76,
     desirabilityScore: 84,
+    criteriaScore: 80,
     evaluationPeriod: "2023-01-01 to 2023-04-30",
   },
   {
@@ -481,6 +484,7 @@ export const initialSuppliersList = [
     evaluationPercentage: 88,
     feasibilityScore: 88,
     desirabilityScore: 88,
+    criteriaScore: 88,
     evaluationPeriod: "2023-01-01 to 2023-04-30",
   },
   {
@@ -504,6 +508,7 @@ export const initialSuppliersList = [
     evaluationPercentage: 70,
     feasibilityScore: 64,
     desirabilityScore: 76,
+    criteriaScore: 70,
     evaluationPeriod: "2023-01-01 to 2023-04-30",
   },
   {
@@ -527,6 +532,7 @@ export const initialSuppliersList = [
     evaluationPercentage: 70,
     feasibilityScore: 56,
     desirabilityScore: 84,
+    criteriaScore: 70,
     evaluationPeriod: "2023-01-01 to 2023-04-30",
   },
   {
@@ -550,6 +556,7 @@ export const initialSuppliersList = [
     evaluationPercentage: 80,
     feasibilityScore: 72,
     desirabilityScore: 88,
+    criteriaScore: 80,
     evaluationPeriod: "2023-01-01 to 2023-04-30",
   },
 ];
