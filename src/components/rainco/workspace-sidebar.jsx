@@ -49,6 +49,11 @@ export const mastersNav = [
   { to: "/tutorials", label: "Tutorials", icon: ListOrdered },
   { to: "/ratings-master", label: "Conditions", icon: Star },
 ];
+export const evaluationNav = [
+  { to: "/evaluation", label: "Evaluation Sheet", icon: ClipboardCheck },
+  { to: "/evaluation-report", label: "Evaluation Result Report", icon: FileText },
+  { to: "/evaluation-chart", label: "Evaluation Chart", icon: Star },
+];
 export const adminNav = [
   { to: "/users", label: "Users", icon: Users },
   { to: "/user-permissions", label: "User Permissions", icon: ShieldCheck },
@@ -60,11 +65,6 @@ export const approvalsNav = [
   { to: "/approval-queue", label: "Pending Approvals", icon: UserCheck },
   { to: "/responded-approvals", label: "Approved Approvals", icon: CheckCircle2 },
   { to: "/rejected-approvals", label: "Rejected Approvals", icon: XCircle },
-];
-export const evaluationNav = [
-  { to: "/evaluation", label: "Evaluation Sheet", icon: ClipboardCheck },
-  { to: "/evaluation-report", label: "Evaluation Result Report", icon: FileText },
-  { to: "/evaluation-chart", label: "Evaluation Chart", icon: Star },
 ];
 function SidebarCollapsibleSection({
   label,
@@ -360,34 +360,54 @@ export function WorkspaceSidebarContent({ isMobile = false, pathname, onCloseMob
           </List>
         </Collapse>
 
-        <ListItemButton
-          selected={role === "rainco"}
-          disabled={isSupplierEvaluationDisabled}
-          onClick={() => {
-            if (!isSupplierEvaluationDisabled) setRole("rainco");
-          }}
-          sx={{
-            borderRadius: 1.5,
-            mb: 0.5,
-            py: 0.9,
-            "&.Mui-selected": {
-              bgcolor: "primary.main",
-              color: "primary.contrastText",
-              boxShadow: "0 2px 6px rgba(238, 28, 37, 0.28)",
-              "&:hover": { bgcolor: "primary.dark" },
-              "& .MuiListItemIcon-root": { color: "primary.contrastText" },
-            },
-          }}
+        <Tooltip
+          title={
+            isSupplierEvaluationDisabled
+              ? "Supplier Evaluation is disabled for supplier accounts. Only the Supplier Portal is accessible."
+              : ""
+          }
+          disableHoverListener={!isSupplierEvaluationDisabled}
         >
-          <ListItemIcon sx={{ minWidth: 28, color: "inherit" }}>
-            <ClipboardCheck size={15} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Supplier Evaluation"
-            slotProps={{ primary: { sx: { fontSize: "12.5px", fontWeight: 700 } } }}
-          />
-          {role === "rainco" && <ChevronDown size={14} />}
-        </ListItemButton>
+          <span>
+            <ListItemButton
+              selected={role === "rainco"}
+              disabled={isSupplierEvaluationDisabled}
+              onClick={() => {
+                if (!isSupplierEvaluationDisabled) setRole("rainco");
+              }}
+              sx={{
+                borderRadius: 1.5,
+                mb: 0.5,
+                py: 0.9,
+                ...(isSupplierEvaluationDisabled && {
+                  opacity: 0.45,
+                  cursor: "not-allowed !important",
+                  bgcolor: "transparent !important",
+                }),
+                "&.Mui-selected": {
+                  bgcolor: "primary.main",
+                  color: "primary.contrastText",
+                  boxShadow: "0 2px 6px rgba(238, 28, 37, 0.28)",
+                  "&:hover": { bgcolor: "primary.dark" },
+                  "& .MuiListItemIcon-root": { color: "primary.contrastText" },
+                },
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 28, color: "inherit" }}>
+                <ClipboardCheck size={15} />
+              </ListItemIcon>
+              <ListItemText
+                primary="Supplier Evaluation"
+                secondary={isSupplierEvaluationDisabled ? "Disabled for supplier account" : null}
+                slotProps={{
+                  primary: { sx: { fontSize: "12.5px", fontWeight: 700 } },
+                  secondary: { sx: { fontSize: "10px", color: "text.disabled" } },
+                }}
+              />
+              {role === "rainco" && !isSupplierEvaluationDisabled && <ChevronDown size={14} />}
+            </ListItemButton>
+          </span>
+        </Tooltip>
 
         <Collapse
           in={role === "rainco" && !isSupplierEvaluationDisabled}
@@ -396,11 +416,20 @@ export function WorkspaceSidebarContent({ isMobile = false, pathname, onCloseMob
         >
           <List component="div" disablePadding sx={{ pl: 1 }}>
             <SidebarCollapsibleSection
-              label="Masters"
+              label="Master"
               icon={Layers3}
               open={mastersOpen}
               onToggle={() => setMastersOpen((prev) => !prev)}
               items={mastersNav}
+              pathname={pathname}
+              onItemClick={handleItemClick}
+            />
+            <SidebarCollapsibleSection
+              label="Evaluation"
+              icon={ClipboardCheck}
+              open={evaluationOpen}
+              onToggle={() => setEvaluationOpen((prev) => !prev)}
+              items={evaluationNav}
               pathname={pathname}
               onItemClick={handleItemClick}
             />
@@ -419,15 +448,6 @@ export function WorkspaceSidebarContent({ isMobile = false, pathname, onCloseMob
               open={approvalsOpen}
               onToggle={() => setApprovalsOpen((prev) => !prev)}
               items={approvalsNav}
-              pathname={pathname}
-              onItemClick={handleItemClick}
-            />
-            <SidebarCollapsibleSection
-              label="Evaluation"
-              icon={ClipboardCheck}
-              open={evaluationOpen}
-              onToggle={() => setEvaluationOpen((prev) => !prev)}
-              items={evaluationNav}
               pathname={pathname}
               onItemClick={handleItemClick}
             />

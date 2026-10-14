@@ -619,11 +619,17 @@ export function WorkspaceProvider({ children }) {
   const logout = () => {
     setIsLoggedIn(false);
   };
+  const handleSetRole = (newRole) => {
+    if (isLoggedIn && role === "supplier" && newRole === "rainco") {
+      return;
+    }
+    setRole(newRole);
+  };
   return (
     <WorkspaceContext.Provider
       value={{
         role,
-        setRole,
+        setRole: handleSetRole,
         documents,
         setDocuments,
         quotations,

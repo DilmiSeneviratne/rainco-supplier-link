@@ -15,9 +15,15 @@ import { AccessNotice, PageHeading, useWorkspace } from "./workspace";
 const permissionTreeGroups = [
   {
     id: "masters",
-    label: "Masters",
+    label: "Master",
     icon: Layers3,
     tabs: ["Supplier Checklist", "Supplier Types", "Employee Master", "Tutorials", "Conditions"],
+  },
+  {
+    id: "evaluation",
+    label: "Evaluation",
+    icon: ClipboardCheck,
+    tabs: ["Evaluation Sheet", "Evaluation Result Report", "Evaluation Chart"],
   },
   {
     id: "administration",
@@ -36,12 +42,6 @@ const permissionTreeGroups = [
       "Approved Approvals",
       "Rejected Approvals",
     ],
-  },
-  {
-    id: "evaluation",
-    label: "Evaluation",
-    icon: ClipboardCheck,
-    tabs: ["Evaluation Sheet", "Evaluation Result Report", "Evaluation Chart"],
   },
 ];
 

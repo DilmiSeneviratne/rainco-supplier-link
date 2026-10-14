@@ -18,29 +18,29 @@ function getBreadcrumbLabel(pathname) {
   if (pathname === "/") return "Supplier Dashboard";
   if (pathname === "/login") return "Supplier Sign-In";
   if (pathname === "/register") return "Supplier Registration (Email Link)";
+  if (pathname === "/checklist") return "Master / Supplier Checklist";
+  if (pathname === "/supplier-types") return "Master / Supplier Types";
+  if (pathname === "/employees") return "Master / Employee Master";
+  if (pathname === "/tutorials" || pathname === "/criterias") return "Master / Tutorials";
+  if (pathname === "/ratings-master") return "Master / Conditions";
+  if (pathname === "/evaluation") return "Evaluation / Evaluation Sheet";
+  if (pathname === "/evaluation-report") return "Evaluation / Evaluation Result Report";
+  if (pathname === "/evaluation-chart") return "Evaluation / Evaluation Chart";
+  if (pathname === "/users") return "Administration / Users";
+  if (pathname === "/user-permissions") return "Administration / User Permissions";
+  if (pathname === "/suppliers") return "Administration / Suppliers";
   if (pathname === "/approval-stages") return "Approvals / Approval Stages";
   if (pathname === "/approval-template") return "Approvals / Approval Template";
   if (pathname === "/approval-queue") return "Approvals / Pending Approvals";
   if (pathname === "/responded-approvals") return "Approvals / Approved Approvals";
   if (pathname === "/rejected-approvals") return "Approvals / Rejected Approvals";
-  if (pathname === "/checklist") return "Masters / Supplier Checklist";
-  if (pathname === "/supplier-types") return "Masters / Supplier Types";
-  if (pathname === "/employees") return "Masters / Employee Master";
-  if (pathname === "/tutorials" || pathname === "/criterias") return "Masters / Tutorials";
-  if (pathname === "/ratings-master") return "Masters / Conditions";
-  if (pathname === "/users") return "Administration / Users";
-  if (pathname === "/user-permissions") return "Administration / User Permissions";
-  if (pathname === "/suppliers") return "Administration / Suppliers";
-  if (pathname === "/evaluation") return "Evaluation / Evaluation Sheet";
-  if (pathname === "/evaluation-report") return "Evaluation / Evaluation Result Report";
-  if (pathname === "/evaluation-chart") return "Evaluation / Evaluation Chart";
   if (pathname === "/invitations") return "Supplier Invitations";
-  const found = [...portalNav, ...mastersNav, ...adminNav, ...approvalsNav, ...evaluationNav].find(
+  const found = [...portalNav, ...mastersNav, ...evaluationNav, ...adminNav, ...approvalsNav].find(
     (item) => item.to === pathname,
   );
   return found?.label ?? "Overview";
 }
-export function WorkspaceTopBar({ pathname, onOpenMobileMenu }) {
+export function WorkspaceTopBar({ pathname, onOpenMobileMenu, hideSidebarMenu = false }) {
   const { role, isLoggedIn, logout, currentUser } = useWorkspace();
   const router = useRouter();
   return (
@@ -65,16 +65,24 @@ export function WorkspaceTopBar({ pathname, onOpenMobileMenu }) {
         }}
       >
         <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0 }}>
-          <IconButton
-            size="small"
-            edge="start"
-            onClick={onOpenMobileMenu}
-            aria-label="Open navigation menu"
-            sx={{ display: { xs: "inline-flex", md: "none" }, color: "text.primary" }}
+          {!hideSidebarMenu && (
+            <IconButton
+              size="small"
+              edge="start"
+              onClick={onOpenMobileMenu}
+              aria-label="Open navigation menu"
+              sx={{ display: { xs: "inline-flex", md: "none" }, color: "text.primary" }}
+            >
+              <Menu size={18} />
+            </IconButton>
+          )}
+          <Box
+            sx={{
+              display: hideSidebarMenu ? "inline-flex" : { xs: "inline-flex", sm: "none" },
+              alignItems: "center",
+              mr: 1,
+            }}
           >
-            <Menu size={18} />
-          </IconButton>
-          <Box sx={{ display: { xs: "inline-flex", sm: "none" }, alignItems: "center", mr: 0.5 }}>
             <RaincoLogo className="h-5 w-auto" />
           </Box>
           <Breadcrumbs

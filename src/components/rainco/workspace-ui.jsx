@@ -1,3 +1,4 @@
+import { useRouter } from "@tanstack/react-router";
 import { Box, Chip, Paper, Typography } from "@mui/material";
 import { ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ export function RaincoLogo({ className = "h-8 w-auto" }) {
 }
 export function AccessNotice({ audience }) {
   const { setRole, isLoggedIn, logout } = useWorkspace();
+  const router = useRouter();
   return (
     <Paper
       elevation={1}
@@ -35,7 +37,7 @@ export function AccessNotice({ audience }) {
           variant="outline"
           onClick={() => {
             logout();
-            window.location.href = "/login";
+            router.navigate({ to: "/login" });
           }}
         >
           Sign in as {audience === "supplier" ? "a Supplier" : "a Rainco User"}
